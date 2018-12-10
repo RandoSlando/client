@@ -234,6 +234,7 @@ const numMessagesOnScrollback = isMobile ? 100 : 100
 export {
   getConversationIDKeyMetasToLoad,
   getMeta,
+  getParticipantSuggestions,
   getRowParticipants,
   getRowStyles,
   inboxUIItemToConversationMeta,
