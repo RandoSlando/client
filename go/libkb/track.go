@@ -453,7 +453,21 @@ func LocalTmpTrackChainLinkFor(m MetaContext, tracker, trackee keybase1.UID) (re
 
 func StoreLocalTrack(m MetaContext, tracker keybase1.UID, trackee keybase1.UID, expiringLocal bool, statement *jsonw.Wrapper) error {
 	m.CDebugf("| StoreLocalTrack, expiring = %v", expiringLocal)
-	return m.G().LocalDb.Put(LocalTrackDBKey(tracker, trackee, expiringLocal), nil, statement)
+	err := m.G().LocalDb.Put(LocalTrackDBKey(tracker, trackee, expiringLocal), nil, statement)
+	if err == nil {
+		NotifyIdentifyHeedTrackingSuccess(m, trackee)
+	}
+	return err
+}
+
+// xxx inline this. change callers to call dispatch
+// Notification sent whenever another user's identify is confirmed.
+// Either through a identify call that heeds the active user's tracking of the target.
+// Or when the active user tracks someone.
+// Not necessarily sent for active user.
+func NotifyIdentifyHeedTrackingSuccess(mctx MetaContext, target keybase1.UID) {
+	mctx.CDebugf("XXX NotifyIdentifyHeedTrackingSuccess(%v) XXX", target)
+	mctx.G().IdentifyDispatch.NotifyIdentifyHeedTrackingSuccess(mctx, target)
 }
 
 func removeLocalTrack(m MetaContext, tracker keybase1.UID, trackee keybase1.UID, expiringLocal bool) error {
