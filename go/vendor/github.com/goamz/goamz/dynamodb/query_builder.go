@@ -60,20 +60,14 @@ func (q *Query) ConsistentRead(c bool) {
 	}
 }
 
-func (q *Query) ReturnConsumedCapacity(r bool) {
-	if r == true {
-		q.buffer["ReturnConsumedCapacity"] = "INDEXES"
-	}
-}
-
-func (q *Query) AddGetRequestItems(tableKeys map[*Table][]Key, consistentRead bool) {
+func (q *Query) AddGetRequestItems(tableKeys map[*Table][]Key) {
 	requestitems := msi{}
 	for table, keys := range tableKeys {
 		keyslist := []msi{}
 		for _, key := range keys {
 			keyslist = append(keyslist, keyAttributes(table, &key))
 		}
-		requestitems[table.Name] = msi{"Keys": keyslist, "ConsistentRead": consistentRead}
+		requestitems[table.Name] = msi{"Keys": keyslist}
 	}
 	q.buffer["RequestItems"] = requestitems
 }
@@ -307,25 +301,12 @@ func (q *Query) AddConditionExpression(expression string) {
 }
 
 func (q *Query) AddExpressionAttributes(attributes []Attribute) {
-	fName := "ExpressionAttributeValues"
-	existing, ok := q.buffer[fName].(msi)
+	existing, ok := q.buffer["ExpressionAttributes"].(msi)
 	if !ok {
 		existing = msi{}
-		q.buffer[fName] = existing
+		q.buffer["ExpressionAttributes"] = existing
 	}
 	for key, val := range attributeList(attributes) {
-		existing[key] = val
-	}
-}
-
-func (q *Query) AddExpressionAttributeNames(names map[string]string) {
-	fName := "ExpressionAttributeNames"
-	existing, ok := q.buffer[fName].(msi)
-	if !ok {
-		existing = msi{}
-		q.buffer[fName] = existing
-	}
-	for key, val := range names {
 		existing[key] = val
 	}
 }
@@ -365,18 +346,6 @@ func attributeList(attributes []Attribute) msi {
 		b[a.Name] = msi{a.Type: map[bool]interface{}{true: a.SetValues, false: a.Value}[a.SetType()]}
 	}
 	return b
-}
-
-func (q *Query) AddStartKey(t *Table, key *Key) {
-	k := t.Key
-	keymap := msi{
-		k.KeyAttribute.Name: msi{
-			k.KeyAttribute.Type: key.HashKey},
-	}
-	if k.HasRange() {
-		keymap[k.RangeAttribute.Name] = msi{k.RangeAttribute.Type: key.RangeKey}
-	}
-	q.buffer["ExclusiveStartKey"] = keymap
 }
 
 func (q *Query) addTable(t *Table) {

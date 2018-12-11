@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/vaughan0/go-ini"
@@ -66,11 +65,13 @@ type Region struct {
 
 var Regions = map[string]Region{
 	APNortheast.Name:  APNortheast,
+	APNortheast2.Name: APNortheast2,
 	APSoutheast.Name:  APSoutheast,
 	APSoutheast2.Name: APSoutheast2,
 	EUCentral.Name:    EUCentral,
 	EUWest.Name:       EUWest,
 	USEast.Name:       USEast,
+	USEast2.Name:      USEast2,
 	USWest.Name:       USWest,
 	USWest2.Name:      USWest2,
 	USGovWest.Name:    USGovWest,
@@ -113,7 +114,7 @@ func MakeParams(action string) map[string]string {
 }
 
 // Create a new AWS server to handle making requests
-func NewService(auth *Auth, service ServiceInfo) (s *Service, err error) {
+func NewService(auth Auth, service ServiceInfo) (s *Service, err error) {
 	var signer Signer
 	switch service.Signer {
 	case V2Signature:
@@ -182,60 +183,33 @@ func (err *Error) Error() string {
 }
 
 type Auth struct {
-	mu                   sync.RWMutex
-	accessKey, secretKey string
+	AccessKey, SecretKey string
 	token                string
 	expiration           time.Time
+}
+
+func (a *Auth) Token() string {
+	if a.token == "" {
+		return ""
+	}
+	if time.Since(a.expiration) >= -30*time.Second { //in an ideal world this should be zero assuming the instance is synching it's clock
+		*a, _ = GetAuth("", "", "", time.Time{})
+	}
+	return a.token
+}
+
+func (a *Auth) Expiration() time.Time {
+	return a.expiration
 }
 
 // To be used with other APIs that return auth credentials such as STS
 func NewAuth(accessKey, secretKey, token string, expiration time.Time) *Auth {
 	return &Auth{
-		accessKey:  accessKey,
-		secretKey:  secretKey,
+		AccessKey:  accessKey,
+		SecretKey:  secretKey,
 		token:      token,
 		expiration: expiration,
 	}
-}
-
-func (a *Auth) Credentials() (accesskey, secretKey, token string) {
-	// in an ideal world this should be zero assuming the instance is synching it's clock
-	authExpirationFudgeFactor := -30 * time.Second
-
-	accessKey, secretKey, token, expiration := a.getCachedCredentials()
-	expires := expiration != time.Time{}
-	if !expires || token == "" {
-		return accessKey, secretKey, token
-	}
-
-	if expired := time.Since(expiration) >= authExpirationFudgeFactor; !expired {
-		return accessKey, secretKey, token
-	}
-
-	// token expired
-	newAuth, err := GetAuth("", "", "", time.Time{})
-	if err != nil {
-		// we can't do much here. the next caller will try again.
-		return "", "", ""
-	}
-
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
-	// check again since re-locking
-	if time.Since(a.expiration) >= authExpirationFudgeFactor {
-		a.accessKey = newAuth.accessKey
-		a.secretKey = newAuth.secretKey
-		a.token = newAuth.token
-		a.expiration = newAuth.expiration
-	}
-	return a.accessKey, a.secretKey, a.token
-}
-
-func (a *Auth) getCachedCredentials() (accessKey, secretKey, token string, expiration time.Time) {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.accessKey, a.secretKey, a.token, a.expiration
 }
 
 // ResponseMetadata
@@ -321,15 +295,10 @@ func getInstanceCredentials() (cred credentials, err error) {
 
 // GetAuth creates an Auth based on either passed in credentials,
 // environment information or instance based role credentials.
-func GetAuth(accessKey string, secretKey, token string, expiration time.Time) (auth *Auth, err error) {
+func GetAuth(accessKey string, secretKey, token string, expiration time.Time) (auth Auth, err error) {
 	// First try passed in credentials
 	if accessKey != "" && secretKey != "" {
-		return &Auth{
-			accessKey:  accessKey,
-			secretKey:  secretKey,
-			token:      token,
-			expiration: expiration,
-		}, nil
+		return Auth{accessKey, secretKey, token, expiration}, nil
 	}
 
 	// Next try to get auth from the shared credentials file
@@ -350,8 +319,8 @@ func GetAuth(accessKey string, secretKey, token string, expiration time.Time) (a
 	cred, err := getInstanceCredentials()
 	if err == nil {
 		// Found auth, return
-		auth.accessKey = cred.AccessKeyId
-		auth.secretKey = cred.SecretAccessKey
+		auth.AccessKey = cred.AccessKeyId
+		auth.SecretKey = cred.SecretAccessKey
 		auth.token = cred.Token
 		exptdate, err := time.Parse("2006-01-02T15:04:05Z", cred.Expiration)
 		if err != nil {
@@ -360,7 +329,7 @@ func GetAuth(accessKey string, secretKey, token string, expiration time.Time) (a
 		auth.expiration = exptdate
 		return auth, err
 	}
-	err = errors.New("No valid AWS authentication found")
+	err = errors.New("No valid AWS authentication found: " + err.Error())
 	return auth, err
 }
 
@@ -368,21 +337,20 @@ func GetAuth(accessKey string, secretKey, token string, expiration time.Time) (a
 // The AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment
 // variables are used.
 // AWS_SESSION_TOKEN is used if present.
-func EnvAuth() (auth *Auth, err error) {
-	auth = &Auth{}
-	auth.accessKey = os.Getenv("AWS_ACCESS_KEY_ID")
-	if auth.accessKey == "" {
-		auth.accessKey = os.Getenv("AWS_ACCESS_KEY")
+func EnvAuth() (auth Auth, err error) {
+	auth.AccessKey = os.Getenv("AWS_ACCESS_KEY_ID")
+	if auth.AccessKey == "" {
+		auth.AccessKey = os.Getenv("AWS_ACCESS_KEY")
 	}
 
-	auth.secretKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
-	if auth.secretKey == "" {
-		auth.secretKey = os.Getenv("AWS_SECRET_KEY")
+	auth.SecretKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
+	if auth.SecretKey == "" {
+		auth.SecretKey = os.Getenv("AWS_SECRET_KEY")
 	}
-	if auth.accessKey == "" {
+	if auth.AccessKey == "" {
 		err = errors.New("AWS_ACCESS_KEY_ID or AWS_ACCESS_KEY not found in environment")
 	}
-	if auth.secretKey == "" {
+	if auth.SecretKey == "" {
 		err = errors.New("AWS_SECRET_ACCESS_KEY or AWS_SECRET_KEY not found in environment")
 	}
 
@@ -393,7 +361,7 @@ func EnvAuth() (auth *Auth, err error) {
 // SharedAuth creates an Auth based on shared credentials stored in
 // $HOME/.aws/credentials. The AWS_PROFILE environment variables is used to
 // select the profile.
-func SharedAuth() (auth *Auth, err error) {
+func SharedAuth() (auth Auth, err error) {
 	var profileName = os.Getenv("AWS_PROFILE")
 
 	if profileName == "" {
@@ -422,15 +390,14 @@ func SharedAuth() (auth *Auth, err error) {
 		return
 	}
 
-	auth = &Auth{
-		accessKey: profile["aws_access_key_id"],
-		secretKey: profile["aws_secret_access_key"],
-	}
+	auth.AccessKey = profile["aws_access_key_id"]
+	auth.SecretKey = profile["aws_secret_access_key"]
+	auth.token = profile["aws_session_token"]
 
-	if auth.accessKey == "" {
+	if auth.AccessKey == "" {
 		err = errors.New("AWS_ACCESS_KEY_ID not found in environment in credentials file")
 	}
-	if auth.secretKey == "" {
+	if auth.SecretKey == "" {
 		err = errors.New("AWS_SECRET_ACCESS_KEY not found in credentials file")
 	}
 	return

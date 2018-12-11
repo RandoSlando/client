@@ -8,9 +8,8 @@ import (
 )
 
 type BatchGetItem struct {
-	Server         *Server
-	Keys           map[*Table][]Key
-	ConsistentRead bool
+	Server *Server
+	Keys   map[*Table][]Key
 }
 
 type BatchWriteItem struct {
@@ -18,8 +17,8 @@ type BatchWriteItem struct {
 	ItemActions map[*Table]map[string][][]Attribute
 }
 
-func (t *Table) BatchGetItems(keys []Key, consistentRead bool) *BatchGetItem {
-	batchGetItem := &BatchGetItem{t.Server, make(map[*Table][]Key), consistentRead}
+func (t *Table) BatchGetItems(keys []Key) *BatchGetItem {
+	batchGetItem := &BatchGetItem{t.Server, make(map[*Table][]Key)}
 
 	batchGetItem.Keys[t] = keys
 	return batchGetItem
@@ -43,27 +42,18 @@ func (batchWriteItem *BatchWriteItem) AddTable(t *Table, itemActions *map[string
 }
 
 func (batchGetItem *BatchGetItem) Execute() (map[string][]map[string]*Attribute, error) {
-	attrs, _, err := batchGetItem.Execute2(false)
-	return attrs, err
-}
-
-func (batchGetItem *BatchGetItem) Execute2(returnConsumedCapacity bool) (map[string][]map[string]*Attribute, *simplejson.Json, error) {
 	q := NewEmptyQuery()
-	q.AddGetRequestItems(batchGetItem.Keys, batchGetItem.ConsistentRead)
-
-	if returnConsumedCapacity {
-		q.ReturnConsumedCapacity(returnConsumedCapacity)
-	}
+	q.AddGetRequestItems(batchGetItem.Keys)
 
 	jsonResponse, err := batchGetItem.Server.queryServer("DynamoDB_20120810.BatchGetItem", q)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	json, err := simplejson.NewJson(jsonResponse)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	results := make(map[string][]map[string]*Attribute)
@@ -71,7 +61,7 @@ func (batchGetItem *BatchGetItem) Execute2(returnConsumedCapacity bool) (map[str
 	tables, err := json.Get("Responses").Map()
 	if err != nil {
 		message := fmt.Sprintf("Unexpected response %s", jsonResponse)
-		return nil, nil, errors.New(message)
+		return nil, errors.New(message)
 	}
 
 	for table, entries := range tables {
@@ -80,14 +70,14 @@ func (batchGetItem *BatchGetItem) Execute2(returnConsumedCapacity bool) (map[str
 		jsonEntriesArray, ok := entries.([]interface{})
 		if !ok {
 			message := fmt.Sprintf("Unexpected response %s", jsonResponse)
-			return nil, nil, errors.New(message)
+			return nil, errors.New(message)
 		}
 
 		for _, entry := range jsonEntriesArray {
 			item, ok := entry.(map[string]interface{})
 			if !ok {
 				message := fmt.Sprintf("Unexpected response %s", jsonResponse)
-				return nil, nil, errors.New(message)
+				return nil, errors.New(message)
 			}
 
 			unmarshalledItem := parseAttributes(item)
@@ -97,45 +87,35 @@ func (batchGetItem *BatchGetItem) Execute2(returnConsumedCapacity bool) (map[str
 		results[table] = tableResult
 	}
 
-	return results, json, nil
+	return results, nil
 }
 
 func (batchWriteItem *BatchWriteItem) Execute() (map[string]interface{}, error) {
-	unprocessed, _, err := batchWriteItem.Execute2(false)
-	return unprocessed, err
-}
-
-func (batchWriteItem *BatchWriteItem) Execute2(returnConsumedCapacity bool) (
-	map[string]interface{}, *simplejson.Json, error) {
 	q := NewEmptyQuery()
 	q.AddWriteRequestItems(batchWriteItem.ItemActions)
-
-	if returnConsumedCapacity {
-		q.ReturnConsumedCapacity(returnConsumedCapacity)
-	}
 
 	jsonResponse, err := batchWriteItem.Server.queryServer("DynamoDB_20120810.BatchWriteItem", q)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	json, err := simplejson.NewJson(jsonResponse)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	unprocessed, err := json.Get("UnprocessedItems").Map()
 	if err != nil {
 		message := fmt.Sprintf("Unexpected response %s", jsonResponse)
-		return nil, nil, errors.New(message)
+		return nil, errors.New(message)
 	}
 
 	if len(unprocessed) == 0 {
-		return nil, json, nil
+		return nil, nil
 	} else {
-		return unprocessed, nil, errors.New("One or more unprocessed items.")
+		return unprocessed, errors.New("One or more unprocessed items.")
 	}
 
 }
@@ -148,23 +128,9 @@ func (t *Table) GetItemConsistent(key *Key, consistentRead bool) (map[string]*At
 	return t.getItem(key, consistentRead)
 }
 
-func (t *Table) GetItemConsistent2(key *Key, consistentRead bool) (map[string]*Attribute, *simplejson.Json, error) {
-	return t.getItem2(key, consistentRead, true)
-}
-
 func (t *Table) getItem(key *Key, consistentRead bool) (map[string]*Attribute, error) {
-	attrs, _, err := t.getItem2(key, consistentRead, false)
-	return attrs, err
-}
-
-func (t *Table) getItem2(key *Key, consistentRead, returnConsumedCapacity bool) (
-	map[string]*Attribute, *simplejson.Json, error) {
 	q := NewQuery(t)
 	q.AddKey(t, key)
-
-	if returnConsumedCapacity {
-		q.ReturnConsumedCapacity(returnConsumedCapacity)
-	}
 
 	if consistentRead {
 		q.ConsistentRead(consistentRead)
@@ -172,27 +138,27 @@ func (t *Table) getItem2(key *Key, consistentRead, returnConsumedCapacity bool) 
 
 	jsonResponse, err := t.Server.queryServer(target("GetItem"), q)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	json, err := simplejson.NewJson(jsonResponse)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	itemJson, ok := json.CheckGet("Item")
 	if !ok {
 		// We got an empty from amz. The item doesn't exist.
-		return nil, nil, ErrNotFound
+		return nil, ErrNotFound
 	}
 
 	item, err := itemJson.Map()
 	if err != nil {
 		message := fmt.Sprintf("Unexpected response %s", jsonResponse)
-		return nil, nil, errors.New(message)
+		return nil, errors.New(message)
 	}
 
-	return parseAttributes(item), json, nil
+	return parseAttributes(item), nil
 
 }
 
@@ -205,29 +171,11 @@ func (t *Table) ConditionalPutItem(hashKey, rangeKey string, attributes, expecte
 }
 
 func (t *Table) putItem(hashKey, rangeKey string, attributes, expected []Attribute) (bool, error) {
-	_, err := t.putItem2(hashKey, rangeKey, attributes, expected, false)
-	return err == nil, err
-}
-
-func (t *Table) PutItem2(hashKey string, rangeKey string, attributes []Attribute) (*simplejson.Json, error) {
-	return t.putItem2(hashKey, rangeKey, attributes, nil, true)
-}
-
-func (t *Table) ConditionalPutItem2(hashKey, rangeKey string, attributes, expected []Attribute) (*simplejson.Json, error) {
-	return t.putItem2(hashKey, rangeKey, attributes, expected, true)
-}
-
-func (t *Table) putItem2(hashKey, rangeKey string, attributes, expected []Attribute, returnConsumedCapacity bool) (
-	*simplejson.Json, error) {
 	if len(attributes) == 0 {
-		return nil, errors.New("At least one attribute is required.")
+		return false, errors.New("At least one attribute is required.")
 	}
 
 	q := NewQuery(t)
-
-	if returnConsumedCapacity {
-		q.ReturnConsumedCapacity(returnConsumedCapacity)
-	}
 
 	keys := t.Key.Clone(hashKey, rangeKey)
 	attributes = append(attributes, keys...)
@@ -240,24 +188,20 @@ func (t *Table) putItem2(hashKey, rangeKey string, attributes, expected []Attrib
 	jsonResponse, err := t.Server.queryServer(target("PutItem"), q)
 
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
-	return simplejson.NewJson(jsonResponse)
+	_, err = simplejson.NewJson(jsonResponse)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (t *Table) deleteItem(key *Key, expected []Attribute) (bool, error) {
-	_, err := t.deleteItem2(key, expected, false)
-	return err == nil, err
-}
-
-func (t *Table) deleteItem2(key *Key, expected []Attribute, returnConsumedCapacity bool) (*simplejson.Json, error) {
 	q := NewQuery(t)
 	q.AddKey(t, key)
-
-	if returnConsumedCapacity {
-		q.ReturnConsumedCapacity(returnConsumedCapacity)
-	}
 
 	if expected != nil {
 		q.AddExpected(expected)
@@ -266,10 +210,15 @@ func (t *Table) deleteItem2(key *Key, expected []Attribute, returnConsumedCapaci
 	jsonResponse, err := t.Server.queryServer(target("DeleteItem"), q)
 
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
-	return simplejson.NewJson(jsonResponse)
+	_, err = simplejson.NewJson(jsonResponse)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (t *Table) DeleteItem(key *Key) (bool, error) {
@@ -304,60 +253,15 @@ func (t *Table) ConditionalDeleteAttributes(key *Key, attributes, expected []Att
 	return t.modifyAttributes(key, attributes, expected, "DELETE")
 }
 
-func (t *Table) DeleteItem2(key *Key) (*simplejson.Json, error) {
-	return t.deleteItem2(key, nil, true)
-}
-
-func (t *Table) ConditionalDeleteItem2(key *Key, expected []Attribute) (*simplejson.Json, error) {
-	return t.deleteItem2(key, expected, true)
-}
-
-func (t *Table) AddAttributes2(key *Key, attributes []Attribute) (*simplejson.Json, error) {
-	return t.modifyAttributes2(key, attributes, nil, "ADD", true)
-}
-
-func (t *Table) UpdateAttributes2(key *Key, attributes []Attribute) (*simplejson.Json, error) {
-	return t.modifyAttributes2(key, attributes, nil, "PUT", true)
-}
-
-func (t *Table) DeleteAttributes2(key *Key, attributes []Attribute) (
-	*simplejson.Json, error) {
-	return t.modifyAttributes2(key, attributes, nil, "DELETE", true)
-}
-
-func (t *Table) ConditionalAddAttributes2(key *Key, attributes, expected []Attribute) (
-	*simplejson.Json, error) {
-	return t.modifyAttributes2(key, attributes, expected, "ADD", true)
-}
-
-func (t *Table) ConditionalUpdateAttributes2(key *Key, attributes, expected []Attribute) (
-	*simplejson.Json, error) {
-	return t.modifyAttributes2(key, attributes, expected, "PUT", true)
-}
-
-func (t *Table) ConditionalDeleteAttributes2(key *Key, attributes, expected []Attribute) (
-	*simplejson.Json, error) {
-	return t.modifyAttributes2(key, attributes, expected, "DELETE", true)
-}
-
 func (t *Table) modifyAttributes(key *Key, attributes, expected []Attribute, action string) (bool, error) {
-	_, err := t.modifyAttributes2(key, attributes, expected, action, false)
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
-func (t *Table) modifyAttributes2(key *Key, attributes, expected []Attribute, action string, shouldReturnConsumedCapacity bool) (*simplejson.Json, error) {
 
 	if len(attributes) == 0 {
-		return nil, errors.New("At least one attribute is required.")
+		return false, errors.New("At least one attribute is required.")
 	}
 
 	q := NewQuery(t)
 	q.AddKey(t, key)
 	q.AddUpdates(attributes, action)
-	q.ReturnConsumedCapacity(shouldReturnConsumedCapacity)
 
 	if expected != nil {
 		q.AddExpected(expected)
@@ -366,15 +270,15 @@ func (t *Table) modifyAttributes2(key *Key, attributes, expected []Attribute, ac
 	jsonResponse, err := t.Server.queryServer(target("UpdateItem"), q)
 
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
 	_, err = simplejson.NewJson(jsonResponse)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
-	return simplejson.NewJson(jsonResponse)
+	return true, nil
 }
 
 func parseAttributes(s map[string]interface{}) map[string]*Attribute {
