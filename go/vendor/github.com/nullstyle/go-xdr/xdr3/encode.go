@@ -448,14 +448,7 @@ func (enc *Encoder) encodeUnion(v reflect.Value) (int, error) {
 		return n, err
 	}
 
-	kind := vs.Kind()
-	var sw int32
-	if kind == reflect.Uint || kind == reflect.Uint8 || kind == reflect.Uint16 ||
-		kind == reflect.Uint32 || kind == reflect.Uint64 {
-		sw = int32(vs.Uint())
-	} else {
-		sw = int32(vs.Int())
-	}
+	sw := int32(vs.Int())
 	arm, ok := u.ArmForSwitch(sw)
 
 	// void arm, we're done

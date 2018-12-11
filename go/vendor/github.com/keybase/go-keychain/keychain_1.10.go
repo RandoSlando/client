@@ -14,10 +14,7 @@ package keychain
 #include <Security/Security.h>
 */
 import "C"
-import (
-	"fmt"
-	"time"
-)
+import "fmt"
 
 // Error defines keychain errors
 type Error int
@@ -107,10 +104,6 @@ var (
 	DataKey = attrKey(C.CFTypeRef(C.kSecValueData))
 	// DescriptionKey is for kSecAttrDescription
 	DescriptionKey = attrKey(C.CFTypeRef(C.kSecAttrDescription))
-	// CreationDateKey is for kSecAttrCreationDate
-	CreationDateKey = attrKey(C.CFTypeRef(C.kSecAttrCreationDate))
-	// ModificationDateKey is for kSecAttrModificationDate
-	ModificationDateKey = attrKey(C.CFTypeRef(C.kSecAttrModificationDate))
 )
 
 // Synchronizable is the items synchronizable status
@@ -331,14 +324,12 @@ func UpdateItem(queryItem Item, updateItem Item) error {
 // QueryResult stores all possible results from queries.
 // Not all fields are applicable all the time. Results depend on query.
 type QueryResult struct {
-	Service          string
-	Account          string
-	AccessGroup      string
-	Label            string
-	Description      string
-	Data             []byte
-	CreationDate     time.Time
-	ModificationDate time.Time
+	Service     string
+	Account     string
+	AccessGroup string
+	Label       string
+	Description string
+	Data        []byte
 }
 
 // QueryItemRef returns query result as CFTypeRef. You must release it when you are done.
@@ -434,10 +425,6 @@ func convertResult(d C.CFDictionaryRef) (*QueryResult, error) {
 				return nil, err
 			}
 			result.Data = b
-		case CreationDateKey:
-			result.CreationDate = CFDateToTime(C.CFDateRef(v))
-		case ModificationDateKey:
-			result.ModificationDate = CFDateToTime(C.CFDateRef(v))
 			// default:
 			// fmt.Printf("Unhandled key in conversion: %v = %v\n", cfTypeValue(k), cfTypeValue(v))
 		}

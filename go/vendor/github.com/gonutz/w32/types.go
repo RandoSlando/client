@@ -5,7 +5,6 @@
 package w32
 
 import (
-	"syscall"
 	"unsafe"
 )
 
@@ -530,12 +529,6 @@ type NMHDR struct {
 	Code     uint32
 }
 
-type NMUPDOWN struct {
-	Hdr   NMHDR
-	Pos   int32
-	Delta int32
-}
-
 // http://msdn.microsoft.com/en-us/library/windows/desktop/bb774743.aspx
 type LVCOLUMN struct {
 	Mask       uint32
@@ -546,9 +539,6 @@ type LVCOLUMN struct {
 	ISubItem   int32
 	IImage     int32
 	IOrder     int32
-	CxMin      int32
-	CxDefault  int32
-	CxIdeal    int32
 }
 
 // http://msdn.microsoft.com/en-us/library/windows/desktop/bb774760.aspx
@@ -566,8 +556,6 @@ type LVITEM struct {
 	IGroupId   int32
 	CColumns   uint32
 	PuColumns  uint32
-	PiColFmt   *int32
-	IGroup     int32
 }
 
 // http://msdn.microsoft.com/en-us/library/windows/desktop/bb774754.aspx
@@ -612,8 +600,8 @@ type NMLVDISPINFO struct {
 
 // http://msdn.microsoft.com/en-us/library/windows/desktop/bb775507.aspx
 type INITCOMMONCONTROLSEX struct {
-	size uint32
-	ICC  uint32
+	DwSize uint32
+	DwICC  uint32
 }
 
 // http://msdn.microsoft.com/en-us/library/windows/desktop/bb760256.aspx
@@ -1065,195 +1053,7 @@ func (fi VS_FIXEDFILEINFO) FileDate() uint64 {
 }
 
 type ACCEL struct {
-	// Virt is a bit mask which may contain:
-	//   FALT, FCONTROL, FSHIFT: keys to be held for the accelerator
-	//   FVIRTKEY: means that Key is a virtual key code, if not set, Key is
-	//             interpreted as a character code
 	Virt byte
-	// Key can either be a virtual key code VK_... or a character
-	Key uint16
-	// Cmd is the value passed to WM_COMMAND or WM_SYSCOMMAND when the
-	// accelerator triggers
-	Cmd uint16
-}
-
-type PHYSICAL_MONITOR struct {
-	Monitor     HANDLE
-	Description [128]uint16
-}
-
-type MENUITEMINFO struct {
-	Size              uint32
-	Mask              uint32
-	Type              uint32
-	State             uint32
-	ID                uint32
-	SubMenu           HMENU
-	BmpChecked        HBITMAP
-	BmpUnChecked      HBITMAP
-	ItemData          uintptr
-	TypeData          uintptr // UTF-16 string
-	ItemTextCharCount uint32
-	BmpItem           HBITMAP
-}
-
-type TPMPARAMS struct {
-	Size    uint32
-	Exclude RECT
-}
-
-type MENUINFO struct {
-	size          uint32
-	Mask          uint32
-	Style         uint32
-	YMax          uint32
-	Back          HBRUSH
-	ContextHelpID uint32
-	MenuData      uintptr
-}
-
-type MENUBARINFO struct {
-	size       uint32
-	Bar        RECT
-	Menu       HMENU
-	Window     HWND
-	BarFocused int32 // bool
-	Focused    int32 // bool
-}
-
-type ACTCTX struct {
-	size                  uint32
-	Flags                 uint32
-	Source                *uint16 // UTF-16 string
-	ProcessorArchitecture uint16
-	LangID                uint16
-	AssemblyDirectory     *uint16 // UTF-16 string
-	ResourceName          *uint16 // UTF-16 string
-	ApplicationName       *uint16 // UTF-16 string
-	Module                HMODULE
-}
-
-type DRAWITEMSTRUCT struct {
-	CtlType    uint32
-	CtlID      uint32
-	ItemID     uint32
-	ItemAction uint32
-	ItemState  uint32
-	HwndItem   HWND
-	HDC        HDC
-	RcItem     RECT
-	ItemData   uintptr
-}
-
-type BLENDFUNC struct {
-	BlendOp             byte
-	BlendFlags          byte
-	SourceConstantAlpha byte
-	AlphaFormat         byte
-}
-
-type NETRESOURCE struct {
-	Scope       uint32
-	Type        uint32
-	DisplayType uint32
-	Usage       uint32
-	LocalName   string
-	RemoteName  string
-	Comment     string
-	Provider    string
-}
-
-func (n *NETRESOURCE) toInternal() *netresource {
-	internal := &netresource{
-		Scope:       n.Scope,
-		Type:        n.Type,
-		DisplayType: n.DisplayType,
-		Usage:       n.Usage,
-	}
-	if n.LocalName != "" {
-		internal.LocalName = syscall.StringToUTF16Ptr(n.LocalName)
-	}
-	if n.RemoteName != "" {
-		internal.RemoteName = syscall.StringToUTF16Ptr(n.RemoteName)
-	}
-	if n.Comment != "" {
-		internal.Comment = syscall.StringToUTF16Ptr(n.Comment)
-	}
-	if n.Provider != "" {
-		internal.Provider = syscall.StringToUTF16Ptr(n.Provider)
-	}
-	return internal
-}
-
-type netresource struct {
-	Scope       uint32
-	Type        uint32
-	DisplayType uint32
-	Usage       uint32
-	LocalName   *uint16
-	RemoteName  *uint16
-	Comment     *uint16
-	Provider    *uint16
-}
-
-type NMLVODSTATECHANGE struct {
-	Hdr      NMHDR
-	From     int32
-	To       int32
-	NewState uint32
-	OldState uint32
-}
-
-type SECURITY_ATTRIBUTES struct {
-	Length             uint32
-	SecurityDescriptor unsafe.Pointer
-	InheritHandle      uint32 // bool value
-}
-
-type OVERLAPPED struct {
-	Internal     uintptr
-	InternalHigh uintptr
-	Pointer      uintptr
-	Event        HANDLE
-}
-
-type STORAGE_DEVICE_DESCRIPTOR struct {
-	Version               uint32
-	Size                  uint32
-	DeviceType            byte
-	DeviceTypeModifier    byte
-	RemovableMedia        byte // bool value
-	CommandQueueing       byte // bool value
-	VendorIdOffset        uint32
-	ProductIdOffset       uint32
-	ProductRevisionOffset uint32
-	SerialNumberOffset    uint32
-	BusType               uint32 // STORAGE_BUS_TYPE
-	RawPropertiesLength   uint32
-	RawDeviceProperties   [1]byte
-}
-
-type STORAGE_PROPERTY_QUERY struct {
-	PropertyId           uint32
-	QueryType            uint32
-	AdditionalParameters [1]byte
-}
-
-// https://docs.microsoft.com/en-us/windows/desktop/api/fileapi/ns-fileapi-_win32_find_stream_data
-type WIN32_FIND_STREAM_DATA struct {
-	Size int64
-	Name [MAX_PATH + 36]uint16
-}
-
-type MSGBOXPARAMS struct {
-	Size           uint32
-	Owner          HWND
-	Instance       HINSTANCE
-	Text           *uint16
-	Caption        *uint16
-	Style          uint32
-	Icon           *uint16
-	ContextHelpId  *uint32
-	MsgBoxCallback uintptr
-	LanguageId     uint32
+	Key  uint16
+	Cmd  uint16
 }

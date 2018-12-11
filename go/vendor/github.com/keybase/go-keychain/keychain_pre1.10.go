@@ -37,15 +37,10 @@ CFIndex CFStringGetLengthSafe(uintptr_t theString) {
 CFIndex CFStringGetBytesSafe(uintptr_t theString, CFRange range, CFStringEncoding encoding, UInt8 lossByte, Boolean isExternalRepresentation, UInt8 *buffer, CFIndex maxBufLen, CFIndex *usedBufLen) {
   return CFStringGetBytes((CFStringRef)theString, range, encoding, lossByte, isExternalRepresentation, buffer, maxBufLen, usedBufLen);
 }
-
-CFAbsoluteTime CFDateGetAbsoluteTimeSafe(uintptr_t theDate) {
-  return CFDateGetAbsoluteTime((CFDateRef)theDate);
-}
 */
 import "C"
 import (
 	"fmt"
-	"time"
 	"unsafe"
 )
 
@@ -137,10 +132,6 @@ var (
 	DataKey = attrKey(C.CFTypeRef(C.kSecValueData))
 	// DescriptionKey is for kSecAttrDescription
 	DescriptionKey = attrKey(C.CFTypeRef(C.kSecAttrDescription))
-	// CreationDateKey is for kSecAttrCreationDate
-	CreationDateKey = attrKey(C.CFTypeRef(C.kSecAttrCreationDate))
-	// ModificationDateKey is for kSecAttrModificationDate
-	ModificationDateKey = attrKey(C.CFTypeRef(C.kSecAttrModificationDate))
 )
 
 // Synchronizable is the items synchronizable status
@@ -361,14 +352,12 @@ func UpdateItem(queryItem Item, updateItem Item) error {
 // QueryResult stores all possible results from queries.
 // Not all fields are applicable all the time. Results depend on query.
 type QueryResult struct {
-	Service          string
-	Account          string
-	AccessGroup      string
-	Label            string
-	Description      string
-	Data             []byte
-	CreationDate     time.Time
-	ModificationDate time.Time
+	Service     string
+	Account     string
+	AccessGroup string
+	Label       string
+	Description string
+	Data        []byte
 }
 
 // QueryItemRef returns query result as CFTypeRef. You must release it when you are done.
@@ -474,16 +463,6 @@ func uintptrCFStringToString(s uintptr) string {
 	return string(buf[:usedBufLen])
 }
 
-// untptrCFDateToTime converts a uintptr (assumed to have been
-// converted from a CFDateRef) to a time.Time.
-//
-// This is an adaptation of CFDateTimeToTime.
-func uintptrCFDateToTime(p uintptr) time.Time {
-	abs := C.CFDateGetAbsoluteTimeSafe(C.uintptr_t(p))
-	s, ns := absoluteTimeToUnix(abs)
-	return time.Unix(s, ns)
-}
-
 func convertResult(d C.CFDictionaryRef) (*QueryResult, error) {
 	m := CFDictionaryToMap(C.CFDictionaryRef(d))
 	result := QueryResult{}
@@ -505,10 +484,6 @@ func convertResult(d C.CFDictionaryRef) (*QueryResult, error) {
 				return nil, err
 			}
 			result.Data = b
-		case CreationDateKey:
-			result.CreationDate = uintptrCFDateToTime(v)
-		case ModificationDateKey:
-			result.ModificationDate = uintptrCFDateToTime(v)
 			// default:
 			// fmt.Printf("Unhandled key in conversion: %v = %v\n", cfTypeValue(k), cfTypeValue(p))
 		}
