@@ -9,7 +9,7 @@ A complete example using this package:
 	package main
 
 	import (
-		"h12.me/socks"
+		"h12.io/socks"
 		"fmt"
 		"net/http"
 		"io/ioutil"
@@ -20,7 +20,7 @@ A complete example using this package:
 		tr := &http.Transport{Dial: dialSocksProxy}
 		httpClient := &http.Client{Transport: tr}
 
-		bodyText, err := TestHttpsGet(httpClient, "https://h12.me/about")
+		bodyText, err := TestHttpsGet(httpClient, "https://h12.io/about")
 		if err != nil {
 			fmt.Println(err.Error())
 		}
@@ -38,7 +38,7 @@ A complete example using this package:
 		return
 	}
 */
-package socks // import "h12.me/socks"
+package socks // import "h12.io/socks"
 
 import (
 	"errors"
@@ -88,8 +88,10 @@ func dialSocks5(proxy, targetAddr string) (conn net.Conn, err error) {
 		return
 	} else if len(resp) != 2 {
 		err = errors.New("Server does not respond properly.")
+		return
 	} else if resp[0] != 5 {
 		err = errors.New("Server does not support Socks 5.")
+		return
 	} else if resp[1] != 0 { // no auth
 		err = errors.New("socks method negotiation failed.")
 		return
@@ -157,6 +159,7 @@ func dialSocks4(socksType int, proxy, targetAddr string) (conn net.Conn, err err
 		return
 	} else if len(resp) != 8 {
 		err = errors.New("Server does not respond properly.")
+		return
 	}
 	switch resp[1] {
 	case 90:

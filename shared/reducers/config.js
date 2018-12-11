@@ -7,6 +7,7 @@ import * as ChatConstants from '../constants/chat2'
 import * as ConfigGen from '../actions/config-gen'
 import * as Stats from '../engine/stats'
 import {isEOFError, isErrorTransient} from '../util/errors'
+import * as Flow from '../util/flow'
 
 const initialState = Constants.makeState()
 
@@ -208,12 +209,10 @@ export default function(state: Types.State = initialState, action: ConfigGen.Act
     case ConfigGen.copyToClipboard:
     case ConfigGen._avatarQueue:
     case ConfigGen.checkForUpdate:
+    case ConfigGen.filePickerError:
       return state
     default:
-      /*::
-      declare var ifFlowErrorsHereItsCauseYouDidntHandleAllActionTypesAbove: (action: empty) => any
-      ifFlowErrorsHereItsCauseYouDidntHandleAllActionTypesAbove(action);
-      */
-      return state
+     Flow.ifFlowComplainsAboutThisFunctionYouHaventHandledAllCasesInASwitch(action)
+     return state
   }
 }

@@ -23,6 +23,9 @@ var (
 	gdiplus  = syscall.NewLazyDLL("gdiplus.dll")
 	version  = syscall.NewLazyDLL("version.dll")
 	winmm    = syscall.NewLazyDLL("winmm.dll")
+	dxva2    = syscall.NewLazyDLL("dxva2.dll")
+	msimg32  = syscall.NewLazyDLL("msimg32.dll")
+	mpr      = syscall.NewLazyDLL("mpr.dll")
 
 	registerClassEx               = user32.NewProc("RegisterClassExW")
 	loadIcon                      = user32.NewProc("LoadIconW")
@@ -39,6 +42,7 @@ var (
 	defDlgProc                    = user32.NewProc("DefDlgProcW")
 	postQuitMessage               = user32.NewProc("PostQuitMessage")
 	getMessage                    = user32.NewProc("GetMessageW")
+	getMessageTime                = user32.NewProc("GetMessageTime")
 	translateMessage              = user32.NewProc("TranslateMessage")
 	dispatchMessage               = user32.NewProc("DispatchMessageW")
 	sendMessage                   = user32.NewProc("SendMessageW")
@@ -52,9 +56,11 @@ var (
 	screenToClient                = user32.NewProc("ScreenToClient")
 	callWindowProc                = user32.NewProc("CallWindowProcW")
 	setWindowLong                 = user32.NewProc("SetWindowLongW")
-	setWindowLongPtr              = user32.NewProc("SetWindowLongW")
+	setWindowLongPtr              = user32.NewProc("SetWindowLongPtrW")
+	setClassLongPtr               = user32.NewProc("SetClassLongPtrW")
 	getWindowLong                 = user32.NewProc("GetWindowLongW")
-	getWindowLongPtr              = user32.NewProc("GetWindowLongW")
+	getWindowLongPtr              = user32.NewProc("GetWindowLongPtrW")
+	getClassLongPtr               = user32.NewProc("GetClassLongPtrW")
 	enableWindow                  = user32.NewProc("EnableWindow")
 	isWindowEnabled               = user32.NewProc("IsWindowEnabled")
 	isWindowVisible               = user32.NewProc("IsWindowVisible")
@@ -67,6 +73,7 @@ var (
 	releaseCapture                = user32.NewProc("ReleaseCapture")
 	getWindowThreadProcessId      = user32.NewProc("GetWindowThreadProcessId")
 	messageBox                    = user32.NewProc("MessageBoxW")
+	messageBoxIndirect            = user32.NewProc("MessageBoxIndirectW")
 	getSystemMetrics              = user32.NewProc("GetSystemMetrics")
 	copyRect                      = user32.NewProc("CopyRect")
 	equalRect                     = user32.NewProc("EqualRect")
@@ -89,6 +96,7 @@ var (
 	endDialog                     = user32.NewProc("EndDialog")
 	peekMessage                   = user32.NewProc("PeekMessageW")
 	createAcceleratorTable        = user32.NewProc("CreateAcceleratorTableW")
+	destroyAcceleratorTable       = user32.NewProc("DestroyAcceleratorTable")
 	translateAccelerator          = user32.NewProc("TranslateAcceleratorW")
 	setWindowPos                  = user32.NewProc("SetWindowPos")
 	fillRect                      = user32.NewProc("FillRect")
@@ -115,6 +123,7 @@ var (
 	setCursorPos                  = user32.NewProc("SetCursorPos")
 	setCursor                     = user32.NewProc("SetCursor")
 	createIcon                    = user32.NewProc("CreateIcon")
+	createIconFromResourceEx      = user32.NewProc("CreateIconFromResourceEx")
 	destroyIcon                   = user32.NewProc("DestroyIcon")
 	monitorFromPoint              = user32.NewProc("MonitorFromPoint")
 	monitorFromRect               = user32.NewProc("MonitorFromRect")
@@ -134,9 +143,6 @@ var (
 	getForegroundWindow           = user32.NewProc("GetForegroundWindow")
 	findWindow                    = user32.NewProc("FindWindowW")
 	getClassName                  = user32.NewProc("GetClassNameW")
-	getMenu                       = user32.NewProc("GetMenu")
-	getSubMenu                    = user32.NewProc("GetSubMenu")
-	checkMenuItem                 = user32.NewProc("CheckMenuItem")
 	getDesktopWindow              = user32.NewProc("GetDesktopWindow")
 	getRawInputData               = user32.NewProc("GetRawInputData")
 	registerRawInputDevices       = user32.NewProc("RegisterRawInputDevices")
@@ -149,6 +155,53 @@ var (
 	getTopWindow                  = user32.NewProc("GetTopWindow")
 	getWindow                     = user32.NewProc("GetWindow")
 	getKeyState                   = user32.NewProc("GetKeyState")
+	getSysColorBrush              = user32.NewProc("GetSysColorBrush")
+	appendMenu                    = user32.NewProc("AppendMenuW")
+	checkMenuItem                 = user32.NewProc("CheckMenuItem")
+	checkMenuRadioItem            = user32.NewProc("CheckMenuRadioItem")
+	createMenu                    = user32.NewProc("CreateMenu")
+	createPopupMenu               = user32.NewProc("CreatePopupMenu")
+	deleteMenu                    = user32.NewProc("DeleteMenu")
+	destroyMenu                   = user32.NewProc("DestroyMenu")
+	drawMenuBar                   = user32.NewProc("DrawMenuBar")
+	enableMenuItem                = user32.NewProc("EnableMenuItem")
+	endMenu                       = user32.NewProc("EndMenu")
+	getMenu                       = user32.NewProc("GetMenu")
+	getMenuBarInfo                = user32.NewProc("GetMenuBarInfo")
+	getMenuCheckMarkDimensions    = user32.NewProc("GetMenuCheckMarkDimensions")
+	getMenuDefaultItem            = user32.NewProc("GetMenuDefaultItem")
+	getMenuInfo                   = user32.NewProc("GetMenuInfo")
+	getMenuItemCount              = user32.NewProc("GetMenuItemCount")
+	getMenuItemID                 = user32.NewProc("GetMenuItemID")
+	getMenuItemInfo               = user32.NewProc("GetMenuItemInfoW")
+	getMenuItemRect               = user32.NewProc("GetMenuItemRect")
+	getMenuState                  = user32.NewProc("GetMenuState")
+	getMenuString                 = user32.NewProc("GetMenuStringW")
+	getSubMenu                    = user32.NewProc("GetSubMenu")
+	getSystemMenu                 = user32.NewProc("GetSystemMenu")
+	hiliteMenuItem                = user32.NewProc("HiliteMenuItem")
+	insertMenu                    = user32.NewProc("InsertMenuW")
+	insertMenuItem                = user32.NewProc("InsertMenuItemW")
+	isMenu                        = user32.NewProc("IsMenu")
+	loadMenu                      = user32.NewProc("LoadMenuW")
+	loadMenuIndirect              = user32.NewProc("LoadMenuIndirectW")
+	menuItemFromPoint             = user32.NewProc("MenuItemFromPoint")
+	modifyMenu                    = user32.NewProc("ModifyMenuW")
+	removeMenu                    = user32.NewProc("RemoveMenu")
+	setMenu                       = user32.NewProc("SetMenu")
+	setMenuDefaultItem            = user32.NewProc("SetMenuDefaultItem")
+	setMenuInfo                   = user32.NewProc("SetMenuInfo")
+	setMenuItemBitmaps            = user32.NewProc("SetMenuItemBitmaps")
+	setMenuItemInfo               = user32.NewProc("SetMenuItemInfoW")
+	trackPopupMenu                = user32.NewProc("TrackPopupMenu")
+	trackPopupMenuEx              = user32.NewProc("TrackPopupMenuEx")
+	isDlgButtonChecked            = user32.NewProc("IsDlgButtonChecked")
+	sendDlgItemMessage            = user32.NewProc("SendDlgItemMessageW")
+	lookupIconIdFromDirectoryEx   = user32.NewProc("LookupIconIdFromDirectoryEx")
+	setForegroundWindow           = user32.NewProc("SetForegroundWindow")
+	scrollWindow                  = user32.NewProc("ScrollWindow")
+	getFocus                      = user32.NewProc("GetFocus")
+	printWindow                   = user32.NewProc("PrintWindow")
 
 	regCreateKeyEx     = advapi32.NewProc("RegCreateKeyExW")
 	regOpenKeyEx       = advapi32.NewProc("RegOpenKeyExW")
@@ -177,6 +230,8 @@ var (
 	imageList_ReplaceIcon   = comctl32.NewProc("ImageList_ReplaceIcon")
 	imageList_Remove        = comctl32.NewProc("ImageList_Remove")
 	trackMouseEvent         = comctl32.NewProc("_TrackMouseEvent")
+	setWindowSubclass       = comctl32.NewProc("SetWindowSubclass")
+	defSubclassProc         = comctl32.NewProc("DefSubclassProc")
 
 	getSaveFileName      = comdlg32.NewProc("GetSaveFileNameW")
 	getOpenFileName      = comdlg32.NewProc("GetOpenFileNameW")
@@ -260,6 +315,18 @@ var (
 	textOut                   = gdi32.NewProc("TextOutW")
 	createSolidBrush          = gdi32.NewProc("CreateSolidBrush")
 	getDIBits                 = gdi32.NewProc("GetDIBits")
+	pie                       = gdi32.NewProc("Pie")
+	setDCPenColor             = gdi32.NewProc("SetDCPenColor")
+	setDCBrushColor           = gdi32.NewProc("SetDCBrushColor")
+	createPen                 = gdi32.NewProc("CreatePen")
+	arc                       = gdi32.NewProc("Arc")
+	arcTo                     = gdi32.NewProc("ArcTo")
+	angleArc                  = gdi32.NewProc("AngleArc")
+	chord                     = gdi32.NewProc("Chord")
+	polygon                   = gdi32.NewProc("Polygon")
+	polyline                  = gdi32.NewProc("Polyline")
+	polyBezier                = gdi32.NewProc("PolyBezier")
+	polyBezierTo              = gdi32.NewProc("PolyBezierTo")
 
 	getModuleHandle            = kernel32.NewProc("GetModuleHandleW")
 	mulDiv                     = kernel32.NewProc("MulDiv")
@@ -291,6 +358,7 @@ var (
 	getDiskFreeSpaceEx         = kernel32.NewProc("GetDiskFreeSpaceExW")
 	getProcessTimes            = kernel32.NewProc("GetProcessTimes")
 	setSystemTime              = kernel32.NewProc("SetSystemTime")
+	setLocalTime               = kernel32.NewProc("SetLocalTime")
 	getSystemTime              = kernel32.NewProc("GetSystemTime")
 	getSystemTimeAsFileTime    = kernel32.NewProc("GetSystemTimeAsFileTime")
 	copyMemory                 = kernel32.NewProc("RtlCopyMemory")
@@ -298,6 +366,15 @@ var (
 	getVersion                 = kernel32.NewProc("GetVersion")
 	setEnvironmentVariable     = kernel32.NewProc("SetEnvironmentVariableW")
 	getComputerName            = kernel32.NewProc("GetComputerNameW")
+	activateActCtx             = kernel32.NewProc("ActivateActCtx")
+	createActCtx               = kernel32.NewProc("CreateActCtxW")
+	getCurrentActCtx           = kernel32.NewProc("GetCurrentActCtx")
+	setErrorMode               = kernel32.NewProc("SetErrorMode")
+	createFile                 = kernel32.NewProc("CreateFileW")
+	deviceIoControl            = kernel32.NewProc("DeviceIoControl")
+	findFirstStream            = kernel32.NewProc("FindFirstStreamW")
+	findNextStream             = kernel32.NewProc("FindNextStreamW")
+	findClose                  = kernel32.NewProc("FindClose")
 
 	coInitializeEx        = ole32.NewProc("CoInitializeEx")
 	coInitialize          = ole32.NewProc("CoInitialize")
@@ -343,6 +420,17 @@ var (
 	verQueryValue          = version.NewProc("VerQueryValueW")
 
 	playSound = winmm.NewProc("PlaySoundW")
+
+	getMonitorBrightness                    = dxva2.NewProc("GetMonitorBrightness")
+	setMonitorBrightness                    = dxva2.NewProc("SetMonitorBrightness")
+	getNumberOfPhysicalMonitorsFromHMONITOR = dxva2.NewProc("GetNumberOfPhysicalMonitorsFromHMONITOR")
+	getPhysicalMonitorsFromHMONITOR         = dxva2.NewProc("GetPhysicalMonitorsFromHMONITOR")
+
+	alphaBlend = msimg32.NewProc("AlphaBlend")
+
+	wNetAddConnection2    = mpr.NewProc("WNetAddConnection2W")
+	wNetAddConnection3    = mpr.NewProc("WNetAddConnection3W")
+	wNetCancelConnection2 = mpr.NewProc("WNetCancelConnection2W")
 )
 
 // RegisterClassEx sets the Size of the WNDCLASSEX automatically.
@@ -394,20 +482,25 @@ func UpdateWindow(hwnd HWND) bool {
 func CreateWindow(className, windowName *uint16,
 	style uint, x, y, width, height int, parent HWND, menu HMENU,
 	instance HINSTANCE, param unsafe.Pointer) HWND {
-	ret, _, _ := createWindowEx.Call(
-		uintptr(unsafe.Pointer(className)),
-		uintptr(unsafe.Pointer(windowName)),
-		uintptr(style),
-		uintptr(x),
-		uintptr(y),
-		uintptr(width),
-		uintptr(height),
-		uintptr(parent),
-		uintptr(menu),
-		uintptr(instance),
-		uintptr(param),
+	return CreateWindowEx(
+		0,
+		className, windowName,
+		style,
+		x, y, width, height,
+		parent, menu, instance, param,
 	)
-	return HWND(ret)
+}
+
+func CreateWindowStr(className, windowName string,
+	style uint, x, y, width, height int, parent HWND, menu HMENU,
+	instance HINSTANCE, param unsafe.Pointer) HWND {
+	return CreateWindow(
+		syscall.StringToUTF16Ptr(className),
+		syscall.StringToUTF16Ptr(windowName),
+		style,
+		x, y, width, height,
+		parent, menu, instance, param,
+	)
 }
 
 func CreateWindowEx(exStyle uint, className, windowName *uint16,
@@ -428,6 +521,19 @@ func CreateWindowEx(exStyle uint, className, windowName *uint16,
 		uintptr(param),
 	)
 	return HWND(ret)
+}
+
+func CreateWindowExStr(exStyle uint, className, windowName string,
+	style uint, x, y, width, height int, parent HWND, menu HMENU,
+	instance HINSTANCE, param unsafe.Pointer) HWND {
+	return CreateWindowEx(
+		exStyle,
+		syscall.StringToUTF16Ptr(className),
+		syscall.StringToUTF16Ptr(windowName),
+		style,
+		x, y, width, height,
+		parent, menu, instance, param,
+	)
 }
 
 func AdjustWindowRectEx(rect *RECT, style uint, menu bool, exStyle uint) bool {
@@ -485,6 +591,11 @@ func GetMessage(msg *MSG, hwnd HWND, msgFilterMin, msgFilterMax uint32) int {
 		uintptr(msgFilterMin),
 		uintptr(msgFilterMax),
 	)
+	return int(ret)
+}
+
+func GetMessageTime() int {
+	ret, _, _ := getMessageTime.Call()
 	return int(ret)
 }
 
@@ -608,6 +719,15 @@ func SetWindowLongPtr(hwnd HWND, index int, value uintptr) uintptr {
 	return ret
 }
 
+func SetClassLongPtr(w HWND, index int, value uintptr) uintptr {
+	ret, _, _ := setClassLongPtr.Call(
+		uintptr(w),
+		uintptr(index),
+		value,
+	)
+	return ret
+}
+
 func GetWindowLong(hwnd HWND, index int) int32 {
 	ret, _, _ := getWindowLong.Call(
 		uintptr(hwnd),
@@ -621,6 +741,11 @@ func GetWindowLongPtr(hwnd HWND, index int) uintptr {
 		uintptr(hwnd),
 		uintptr(index),
 	)
+	return ret
+}
+
+func GetClassLongPtr(w HWND, index int) uintptr {
+	ret, _, _ := getClassLongPtr.Call(uintptr(w), uintptr(index))
 	return ret
 }
 
@@ -706,6 +831,14 @@ func MessageBox(hwnd HWND, text, caption string, flags uint) int {
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(caption))),
 		uintptr(flags),
 	)
+	return int(ret)
+}
+
+func MessageBoxIndirect(params *MSGBOXPARAMS) int {
+	if params != nil {
+		params.Size = uint32(unsafe.Sizeof(*params))
+	}
+	ret, _, _ := messageBoxIndirect.Call(uintptr(unsafe.Pointer(params)))
 	return int(ret)
 }
 
@@ -897,6 +1030,11 @@ func CreateAcceleratorTable(acc []ACCEL) HACCEL {
 	return HACCEL(ret)
 }
 
+func DestroyAcceleratorTable(acc HACCEL) bool {
+	ret, _, _ := destroyAcceleratorTable.Call(uintptr(acc))
+	return ret != 0
+}
+
 func TranslateAccelerator(hwnd HWND, hAccTable HACCEL, lpMsg *MSG) bool {
 	ret, _, _ := translateAccelerator.Call(
 		uintptr(hwnd),
@@ -928,11 +1066,17 @@ func FillRect(hDC HDC, lprc *RECT, hbr HBRUSH) bool {
 	return ret != 0
 }
 
-func DrawText(hDC HDC, text string, uCount int, lpRect *RECT, uFormat uint) int {
+// DrawText does not support DT_MODIFYSTRING in this implementation.
+func DrawText(hDC HDC, text string, lpRect *RECT, uFormat uint) int {
+	// suppress DT_MODIFYSTRING because the given text is not a pointer and we
+	// do not return any text changes.
+	mod := uint(DT_MODIFYSTRING)
+	uFormat = uFormat & ^mod
+	count := -1 // because the text pointer is NULL terminated
 	ret, _, _ := drawText.Call(
 		uintptr(hDC),
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(text))),
-		uintptr(uCount),
+		uintptr(count),
 		uintptr(unsafe.Pointer(lpRect)),
 		uintptr(uFormat),
 	)
@@ -1011,7 +1155,7 @@ func BeginPaint(hwnd HWND, paint *PAINTSTRUCT) HDC {
 }
 
 func EndPaint(hwnd HWND, paint *PAINTSTRUCT) {
-	beginPaint.Call(
+	endPaint.Call(
 		uintptr(hwnd),
 		uintptr(unsafe.Pointer(paint)),
 	)
@@ -1088,6 +1232,27 @@ func CreateIcon(instance HINSTANCE, nWidth, nHeight int, cPlanes, cBitsPerPixel 
 		uintptr(cBitsPerPixel),
 		uintptr(unsafe.Pointer(ANDbits)),
 		uintptr(unsafe.Pointer(XORbits)),
+	)
+	return HICON(ret)
+}
+
+func CreateIconFromResourceEx(
+	mem unsafe.Pointer,
+	memSize uint32,
+	icon bool,
+	version uint32,
+	width int,
+	height int,
+	flags uint,
+) HICON {
+	ret, _, _ := createIconFromResourceEx.Call(
+		uintptr(mem),
+		uintptr(memSize),
+		uintptr(BoolToBOOL(icon)),
+		uintptr(version),
+		uintptr(width),
+		uintptr(height),
+		uintptr(flags),
 	)
 	return HICON(ret)
 }
@@ -1272,25 +1437,6 @@ func GetClassName(window HWND) (string, bool) {
 	return syscall.UTF16ToString(output[:]), ret != 0
 }
 
-func GetMenu(window HWND) HMENU {
-	ret, _, _ := getMenu.Call(uintptr(window))
-	return HMENU(ret)
-}
-
-func GetSubMenu(menu HMENU, pos int) HMENU {
-	ret, _, _ := getSubMenu.Call(uintptr(menu), uintptr(pos))
-	return HMENU(ret)
-}
-
-func CheckMenuItem(menu HMENU, idCheckItem, check uint) int32 {
-	ret, _, _ := checkMenuItem.Call(
-		uintptr(menu),
-		uintptr(idCheckItem),
-		uintptr(check),
-	)
-	return int32(ret)
-}
-
 func GetDesktopWindow() HWND {
 	ret, _, _ := getDesktopWindow.Call()
 	return HWND(ret)
@@ -1381,6 +1527,420 @@ func GetNextWindow(rel HWND, cmd uint) HWND {
 func GetKeyState(key int) uint16 {
 	ret, _, _ := getKeyState.Call(uintptr(key))
 	return uint16(ret)
+}
+
+func GetSysColorBrush(index int) HBRUSH {
+	ret, _, _ := getSysColorBrush.Call(uintptr(index))
+	return HBRUSH(ret)
+}
+
+func AppendMenu(m HMENU, flags uint, id uintptr, item string) bool {
+	ret, _, _ := appendMenu.Call(
+		uintptr(m),
+		uintptr(flags),
+		id,
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item))),
+	)
+	return ret != 0
+}
+
+func CheckMenuItem(m HMENU, item, check uint) uint32 {
+	ret, _, _ := checkMenuItem.Call(
+		uintptr(m),
+		uintptr(item),
+		uintptr(check),
+	)
+	return uint32(ret)
+}
+
+func CheckMenuRadioItem(m HMENU, first, last, check, flags uint) bool {
+	ret, _, _ := checkMenuRadioItem.Call(
+		uintptr(m),
+		uintptr(first),
+		uintptr(last),
+		uintptr(check),
+		uintptr(flags),
+	)
+	return ret != 0
+}
+
+func CreateMenu() HMENU {
+	ret, _, _ := createMenu.Call()
+	return HMENU(ret)
+}
+
+func CreatePopupMenu() HMENU {
+	ret, _, _ := createPopupMenu.Call()
+	return HMENU(ret)
+}
+
+func DeleteMenu(m HMENU, pos, flags uint) bool {
+	ret, _, _ := deleteMenu.Call(
+		uintptr(m),
+		uintptr(pos),
+		uintptr(flags),
+	)
+	return ret != 0
+}
+
+func DestroyMenu(m HMENU) bool {
+	ret, _, _ := destroyMenu.Call(uintptr(m))
+	return ret != 0
+}
+
+func DrawMenuBar(window HWND) bool {
+	ret, _, _ := drawMenuBar.Call(uintptr(window))
+	return ret != 0
+}
+
+func EnableMenuItem(m HMENU, item, enable uint) int {
+	ret, _, _ := enableMenuItem.Call(
+		uintptr(m),
+		uintptr(item),
+		uintptr(enable),
+	)
+	return int(ret)
+}
+
+func EndMenu() bool {
+	ret, _, _ := endMenu.Call()
+	return ret != 0
+}
+
+func GetMenu(window HWND) HMENU {
+	ret, _, _ := getMenu.Call(uintptr(window))
+	return HMENU(ret)
+}
+
+func GetMenuBarInfo(w HWND, object, item int, info *MENUBARINFO) bool {
+	if info != nil {
+		info.size = uint32(unsafe.Sizeof(*info))
+	}
+	ret, _, _ := getMenuBarInfo.Call(
+		uintptr(w),
+		uintptr(object),
+		uintptr(item),
+		uintptr(unsafe.Pointer(info)),
+	)
+	return ret != 0
+}
+
+func GetMenuCheckMarkDimensions() (w, h int) {
+	ret, _, _ := getMenuCheckMarkDimensions.Call()
+	return int(ret & 0x00FFFF), int(ret&0xFFFF0000) >> 16
+}
+
+func GetMenuDefaultItem(m HMENU, byPos, flags uint) int {
+	ret, _, _ := getMenuDefaultItem.Call(
+		uintptr(m),
+		uintptr(byPos),
+		uintptr(flags),
+	)
+	return int(ret)
+}
+
+func GetMenuInfo(m HMENU, info *MENUINFO) bool {
+	if info != nil {
+		info.size = uint32(unsafe.Sizeof(*info))
+	}
+	ret, _, _ := getMenuInfo.Call(
+		uintptr(m),
+		uintptr(unsafe.Pointer(info)),
+	)
+	return ret != 0
+}
+
+func GetMenuItemCount(m HMENU) int {
+	ret, _, _ := getMenuItemCount.Call(uintptr(m))
+	return int(ret)
+}
+
+func GetMenuItemID(m HMENU, pos int) int {
+	ret, _, _ := getMenuItemID.Call(uintptr(m), uintptr(pos))
+	return int(ret)
+}
+
+func GetMenuItemInfo(m HMENU, item uint, byPos bool, info *MENUITEMINFO) bool {
+	ret, _, _ := getMenuItemInfo.Call(
+		uintptr(m),
+		uintptr(item),
+		uintptr(BoolToBOOL(byPos)),
+		uintptr(unsafe.Pointer(info)),
+	)
+	return ret != 0
+}
+
+func GetMenuItemRect(w HWND, m HMENU, item uint, r *RECT) bool {
+	ret, _, _ := getMenuItemRect.Call(
+		uintptr(w),
+		uintptr(m),
+		uintptr(item),
+		uintptr(unsafe.Pointer(r)),
+	)
+	return ret != 0
+}
+
+func GetMenuState(m HMENU, id, flags uint) int {
+	ret, _, _ := getMenuState.Call(
+		uintptr(m),
+		uintptr(id),
+		uintptr(flags),
+	)
+	return int(ret)
+}
+
+func GetMenuString(m HMENU, item, flags uint) string {
+	length, _, _ := getMenuString.Call(
+		uintptr(m),
+		uintptr(item),
+		0,
+		0,
+		uintptr(flags),
+	)
+	if length == 0 {
+		return ""
+	}
+	buf := make([]uint16, length+1)
+	getMenuString.Call(
+		uintptr(m),
+		uintptr(item),
+		uintptr(unsafe.Pointer(&buf[0])),
+		length+1,
+		uintptr(flags),
+	)
+	buf[length] = 0
+	return syscall.UTF16ToString(buf)
+}
+
+func GetSubMenu(menu HMENU, pos int) HMENU {
+	ret, _, _ := getSubMenu.Call(uintptr(menu), uintptr(pos))
+	return HMENU(ret)
+}
+
+func GetSystemMenu(w HWND, revert bool) HMENU {
+	ret, _, _ := getSystemMenu.Call(
+		uintptr(w),
+		uintptr(BoolToBOOL(revert)),
+	)
+	return HMENU(ret)
+}
+
+func HiliteMenuItem(w HWND, m HMENU, item, hilite uint) bool {
+	ret, _, _ := hiliteMenuItem.Call(
+		uintptr(w),
+		uintptr(m),
+		uintptr(item),
+		uintptr(hilite),
+	)
+	return ret != 0
+}
+
+func InsertMenu(m HMENU, pos, flags uint, id uintptr, item string) bool {
+	ret, _, _ := insertMenu.Call(
+		uintptr(m),
+		uintptr(pos),
+		uintptr(flags),
+		id,
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item))),
+	)
+	return ret != 0
+}
+
+func InsertMenuItem(m HMENU, item uint, byPos bool, newItem *MENUITEMINFO) bool {
+	ret, _, _ := insertMenuItem.Call(
+		uintptr(m),
+		uintptr(item),
+		uintptr(BoolToBOOL(byPos)),
+		uintptr(unsafe.Pointer(newItem)),
+	)
+	return ret != 0
+}
+
+func IsMenu(m HMENU) bool {
+	ret, _, _ := isMenu.Call(uintptr(m))
+	return ret != 0
+}
+
+func LoadMenu(inst HINSTANCE, menuName string) HMENU {
+	ret, _, _ := loadMenu.Call(
+		uintptr(inst),
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(menuName))),
+	)
+	return HMENU(ret)
+}
+
+// TODO create nice API for this
+func LoadMenuIndirect(template uintptr) HMENU {
+	ret, _, _ := loadMenuIndirect.Call(template)
+	return HMENU(ret)
+}
+
+// ModifyMenu changes an existing menu item. This function is used to specify
+// the content, appearance, and behavior of the menu item.
+//
+// Note The ModifyMenu function has been superseded by the SetMenuItemInfo
+// function. You can still use ModifyMenu, however, if you do not need any of
+// the extended features of SetMenuItemInfo.
+func ModifyMenu(m HMENU, pos, flags uint, idNewItem uintptr, newItem string) bool {
+	ret, _, _ := modifyMenu.Call(
+		uintptr(m),
+		uintptr(pos),
+		uintptr(flags),
+		idNewItem,
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(newItem))),
+	)
+	return ret != 0
+}
+
+// RemoveMenu deletes a menu item or detaches a submenu from the specified menu.
+// If the menu item opens a drop-down menu or submenu, RemoveMenu does not
+// destroy the menu or its handle, allowing the menu to be reused. Before this
+// function is called, the GetSubMenu function should retrieve a handle to the
+// drop-down menu or submenu.
+func RemoveMenu(m HMENU, pos, flags uint) bool {
+	ret, _, _ := removeMenu.Call(
+		uintptr(m),
+		uintptr(pos),
+		uintptr(flags),
+	)
+	return ret != 0
+}
+
+func SetMenu(w HWND, m HMENU) bool {
+	ret, _, _ := setMenu.Call(uintptr(w), uintptr(m))
+	return ret != 0
+}
+
+// SetMenuDefaultItem sets the default menu item for the specified menu.
+func SetMenuDefaultItem(m HMENU, item, byPos uint) bool {
+	ret, _, _ := setMenuDefaultItem.Call(
+		uintptr(m),
+		uintptr(item),
+		uintptr(byPos),
+	)
+	return ret != 0
+}
+
+// SetMenuInfo sets information for a specified menu.
+func SetMenuInfo(m HMENU, info *MENUINFO) bool {
+	ret, _, _ := setMenuInfo.Call(
+		uintptr(m),
+		uintptr(unsafe.Pointer(info)),
+	)
+	return ret != 0
+}
+
+// SetMenuItemBitmaps associates the specified bitmap with a menu item. Whether
+// the menu item is selected or clear, the system displays the appropriate
+// bitmap next to the menu item.
+func SetMenuItemBitmaps(m HMENU, pos, flags uint, unchecked, checked HBITMAP) bool {
+	ret, _, _ := setMenuItemBitmaps.Call(
+		uintptr(m),
+		uintptr(pos),
+		uintptr(flags),
+		uintptr(unchecked),
+		uintptr(checked),
+	)
+	return ret != 0
+}
+
+// SetMenuItemInfo changes information about a menu item.
+func SetMenuItemInfo(m HMENU, item uint, byPos bool, mii *MENUITEMINFO) bool {
+	ret, _, _ := setMenuItemInfo.Call(
+		uintptr(m),
+		uintptr(item),
+		uintptr(BoolToBOOL(byPos)),
+		uintptr(unsafe.Pointer(mii)),
+	)
+	return ret != 0
+}
+
+// TrackPopupMenu displays a shortcut menu at the specified location and tracks
+// the selection of items on the menu. The shortcut menu can appear anywhere on
+// the screen.
+func TrackPopupMenu(m HMENU, flags uint, x, y int, w HWND, r *RECT) int {
+	ret, _, _ := trackPopupMenu.Call(
+		uintptr(m),
+		uintptr(flags),
+		uintptr(x),
+		uintptr(y),
+		0, // reserved parameter
+		uintptr(w),
+		uintptr(unsafe.Pointer(r)),
+	)
+	return int(ret)
+}
+
+// TrackPopupMenuEx displays a shortcut menu at the specified location and
+// tracks the selection of items on the shortcut menu. The shortcut menu can
+// appear anywhere on the screen.
+func TrackPopupMenuEx(m HMENU, flags uint, x, y int, w HWND, tpm *TPMPARAMS) int {
+	ret, _, _ := trackPopupMenuEx.Call(
+		uintptr(m),
+		uintptr(flags),
+		uintptr(x),
+		uintptr(y),
+		uintptr(w),
+		uintptr(unsafe.Pointer(tpm)),
+	)
+	return int(ret)
+}
+
+func IsDlgButtonChecked(dlg HWND, id uintptr) uint {
+	ret, _, _ := isDlgButtonChecked.Call(uintptr(dlg), id)
+	return uint(ret)
+}
+
+func SendDlgItemMessage(dlg HWND, id int, msg uint, w, l uintptr) uintptr {
+	ret, _, _ := sendDlgItemMessage.Call(
+		uintptr(dlg),
+		uintptr(id),
+		uintptr(msg),
+		uintptr(w),
+		uintptr(l),
+	)
+	return ret
+}
+
+func LookupIconIdFromDirectoryEx(mem unsafe.Pointer, icon bool, width, height int, flags uint) int {
+	ret, _, _ := lookupIconIdFromDirectoryEx.Call(
+		uintptr(mem),
+		uintptr(BoolToBOOL(icon)),
+		uintptr(width),
+		uintptr(height),
+		uintptr(flags),
+	)
+	return int(ret)
+}
+
+func SetForegroundWindow(window HWND) bool {
+	ret, _, _ := setForegroundWindow.Call(uintptr(window))
+	return ret != 0
+}
+
+func ScrollWindow(window HWND, dx, dy int, r, clip *RECT) bool {
+	ret, _, _ := scrollWindow.Call(
+		uintptr(window),
+		uintptr(dx),
+		uintptr(dy),
+		uintptr(unsafe.Pointer(r)),
+		uintptr(unsafe.Pointer(clip)),
+	)
+	return ret != 0
+}
+
+func GetFocus() HWND {
+	ret, _, _ := getFocus.Call()
+	return HWND(ret)
+}
+
+func PrintWindow(w HWND, dc HDC, flags uint) bool {
+	ret, _, _ := printWindow.Call(
+		uintptr(w),
+		uintptr(dc),
+		uintptr(flags),
+	)
+	return ret != 0
 }
 
 func RegCreateKey(hKey HKEY, subKey string) HKEY {
@@ -1722,6 +2282,9 @@ func ControlService(hService HANDLE, dwControl uint32, lpServiceStatus *SERVICE_
 }
 
 func InitCommonControlsEx(lpInitCtrls *INITCOMMONCONTROLSEX) bool {
+	if lpInitCtrls != nil {
+		lpInitCtrls.size = 8
+	}
 	ret, _, _ := initCommonControlsEx.Call(uintptr(unsafe.Pointer(lpInitCtrls)))
 	return ret != 0
 }
@@ -1794,6 +2357,26 @@ func TrackMouseEvent(tme *TRACKMOUSEEVENT) bool {
 	return ret != 0
 }
 
+func SetWindowSubclass(window HWND, proc uintptr, id uintptr, refData uintptr) bool {
+	ret, _, _ := setWindowSubclass.Call(
+		uintptr(window),
+		proc,
+		uintptr(id),
+		refData,
+	)
+	return ret != 0
+}
+
+func DefSubclassProc(window HWND, msg uint32, w, l uintptr) uintptr {
+	ret, _, _ := defSubclassProc.Call(
+		uintptr(window),
+		uintptr(msg),
+		w,
+		l,
+	)
+	return ret
+}
+
 // GetOpenFileName automatically sets the StructSize member of the OPENFILENAME.
 func GetOpenFileName(ofn *OPENFILENAME) bool {
 	if ofn != nil {
@@ -1803,7 +2386,11 @@ func GetOpenFileName(ofn *OPENFILENAME) bool {
 	return ret != 0
 }
 
+// GetSaveFileName automatically sets the StructSize member of the OPENFILENAME.
 func GetSaveFileName(ofn *OPENFILENAME) bool {
+	if ofn != nil {
+		ofn.StructSize = uint32(unsafe.Sizeof(*ofn))
+	}
 	ret, _, _ := getSaveFileName.Call(uintptr(unsafe.Pointer(ofn)))
 	return ret != 0
 }
@@ -2225,7 +2812,7 @@ func GetObject(hgdiobj HGDIOBJ, cbBuffer uintptr, lpvObject unsafe.Pointer) int 
 }
 
 func GetStockObject(fnObject int) HGDIOBJ {
-	ret, _, _ := getDeviceCaps.Call(uintptr(fnObject))
+	ret, _, _ := getStockObject.Call(uintptr(fnObject))
 	return HGDIOBJ(ret)
 }
 
@@ -2242,14 +2829,19 @@ func GetTextExtentExPoint(hdc HDC, lpszStr *uint16, cchString, nMaxExtent int, l
 	return ret != 0
 }
 
-func GetTextExtentPoint32(hdc HDC, lpString *uint16, c int, lpSize *SIZE) bool {
+func GetTextExtentPoint32(hdc HDC, text string) (SIZE, bool) {
+	var s SIZE
+	str, err := syscall.UTF16FromString(text)
+	if err != nil {
+		return s, false
+	}
 	ret, _, _ := getTextExtentPoint32.Call(
 		uintptr(hdc),
-		uintptr(unsafe.Pointer(lpString)),
-		uintptr(c),
-		uintptr(unsafe.Pointer(lpSize)),
+		uintptr(unsafe.Pointer(&str[0])),
+		uintptr(len(str)-1), // -1 for the trailing '\0'
+		uintptr(unsafe.Pointer(&s)),
 	)
-	return ret != 0
+	return s, ret != 0
 }
 
 func GetTextMetrics(hdc HDC, lptm *TEXTMETRIC) bool {
@@ -2461,7 +3053,7 @@ func TextOut(hdc HDC, x, y int, s string) bool {
 		uintptr(x),
 		uintptr(y),
 		uintptr(unsafe.Pointer(&str[0])),
-		uintptr(len(str)),
+		uintptr(len(str)-1), // -1 for the trailing '\0'
 	)
 	return ret != 0
 }
@@ -2489,6 +3081,124 @@ func GetDIBits(
 		uintptr(usage),
 	)
 	return int(ret)
+}
+
+func Pie(hdc HDC, left, top, right, bottom, xr1, yr1, xr2, yr2 int) bool {
+	ret, _, _ := pie.Call(
+		uintptr(hdc),
+		uintptr(left),
+		uintptr(top),
+		uintptr(right),
+		uintptr(bottom),
+		uintptr(xr1),
+		uintptr(yr1),
+		uintptr(xr2),
+		uintptr(yr2),
+	)
+	return ret != 0
+}
+
+func SetDCPenColor(hdc HDC, color COLORREF) COLORREF {
+	ret, _, _ := setDCPenColor.Call(uintptr(hdc), uintptr(color))
+	return COLORREF(ret)
+}
+
+func SetDCBrushColor(hdc HDC, color COLORREF) COLORREF {
+	ret, _, _ := setDCBrushColor.Call(uintptr(hdc), uintptr(color))
+	return COLORREF(ret)
+}
+
+func CreatePen(style int, width int, color COLORREF) HPEN {
+	ret, _, _ := createPen.Call(
+		uintptr(style),
+		uintptr(width),
+		uintptr(color),
+	)
+	return HPEN(ret)
+}
+
+func Arc(hdc HDC, x1, y1, x2, y2, x3, y3, x4, y4 int) bool {
+	ret, _, _ := arc.Call(
+		uintptr(hdc),
+		uintptr(x1),
+		uintptr(y1),
+		uintptr(x2),
+		uintptr(y2),
+		uintptr(x3),
+		uintptr(y3),
+		uintptr(x4),
+		uintptr(y4),
+	)
+	return ret != 0
+}
+
+func ArcTo(hdc HDC, left, top, right, bottom, xr1, yr1, xr2, yr2 int) bool {
+	ret, _, _ := arcTo.Call(
+		uintptr(hdc),
+		uintptr(left),
+		uintptr(top),
+		uintptr(right),
+		uintptr(bottom),
+		uintptr(xr1),
+		uintptr(yr1),
+		uintptr(xr2),
+		uintptr(yr2),
+	)
+	return ret != 0
+}
+
+func AngleArc(hdc HDC, x, y, r int, startAngle, sweepAngle float32) bool {
+	ret, _, _ := angleArc.Call(
+		uintptr(hdc),
+		uintptr(x),
+		uintptr(y),
+		uintptr(r),
+		uintptr(startAngle),
+		uintptr(sweepAngle),
+	)
+	return ret != 0
+}
+
+func Chord(hdc HDC, x1, y1, x2, y2, x3, y3, x4, y4 int) bool {
+	ret, _, _ := chord.Call(
+		uintptr(hdc),
+		uintptr(x1),
+		uintptr(y1),
+		uintptr(x2),
+		uintptr(y2),
+		uintptr(x3),
+		uintptr(y3),
+		uintptr(x4),
+		uintptr(y4),
+	)
+	return ret != 0
+}
+
+func Polygon(hdc HDC, p []POINT) bool {
+	ret, _, _ := polygon.Call(
+		uintptr(hdc),
+		uintptr(unsafe.Pointer(&p[0])),
+		uintptr(len(p)),
+	)
+	return ret != 0
+}
+
+func Polyline(hdc HDC, p []POINT) bool {
+	ret, _, _ := polyline.Call(
+		uintptr(hdc),
+		uintptr(unsafe.Pointer(&p[0])),
+		uintptr(len(p)),
+	)
+	return ret != 0
+}
+
+func PolyBezier(hdc HDC, p []POINT) bool {
+	ret, _, _ := polyBezier.Call(
+		uintptr(hdc),
+		uintptr(unsafe.Pointer(&p[0])),
+		uintptr(len(p)),
+	)
+	return ret != 0
 }
 
 func GetModuleHandle(modulename string) HINSTANCE {
@@ -2731,6 +3441,12 @@ func SetSystemTime(time *SYSTEMTIME) bool {
 	return ret != 0
 }
 
+func SetLocalTime(time *SYSTEMTIME) bool {
+	ret, _, _ := setLocalTime.Call(
+		uintptr(unsafe.Pointer(time)))
+	return ret != 0
+}
+
 func CopyMemory(dest, source unsafe.Pointer, sizeInBytes int) {
 	copyMemory.Call(
 		uintptr(dest),
@@ -2769,6 +3485,104 @@ func GetComputerName() string {
 		return syscall.UTF16ToString(buf[:])
 	}
 	return ""
+}
+
+func ActivateActCtx(ctx HANDLE) (uintptr, bool) {
+	var cookie uintptr
+	ret, _, _ := activateActCtx.Call(
+		uintptr(ctx),
+		uintptr(unsafe.Pointer(&cookie)),
+	)
+	return cookie, ret != 0
+}
+
+func CreateActCtx(ctx *ACTCTX) HANDLE {
+	if ctx != nil {
+		ctx.size = uint32(unsafe.Sizeof(*ctx))
+	}
+	ret, _, _ := createActCtx.Call(uintptr(unsafe.Pointer(ctx)))
+	return HANDLE(ret)
+}
+
+func GetCurrentActCtx() (HANDLE, bool) {
+	var h HANDLE
+	ret, _, _ := getCurrentActCtx.Call(uintptr(unsafe.Pointer(&h)))
+	return h, ret != 0
+}
+
+func SetErrorMode(mode uint) uint {
+	ret, _, _ := setErrorMode.Call(uintptr(mode))
+	return uint(ret)
+}
+
+func CreateFile(
+	filename string,
+	access uint32,
+	shareMode uint32,
+	security *SECURITY_ATTRIBUTES,
+	disposition uint32,
+	flags uint32,
+	templateFile HANDLE,
+) HANDLE {
+	ret, _, _ := createFile.Call(
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(filename))),
+		uintptr(access),
+		uintptr(shareMode),
+		uintptr(unsafe.Pointer(security)),
+		uintptr(disposition),
+		uintptr(flags),
+		uintptr(templateFile),
+	)
+	return HANDLE(ret)
+}
+
+func DeviceIoControl(
+	dev HANDLE,
+	controlCode uint32,
+	inBuffer unsafe.Pointer,
+	inBufferSize uint32,
+	outBuffer unsafe.Pointer,
+	outBufferSize uint32,
+	overlapped *OVERLAPPED,
+) (outBufWrittenBytes uint32, ok bool) {
+	ret, _, _ := deviceIoControl.Call(
+		uintptr(dev),
+		uintptr(controlCode),
+		uintptr(inBuffer),
+		uintptr(inBufferSize),
+		uintptr(outBuffer),
+		uintptr(outBufferSize),
+		uintptr(unsafe.Pointer(&outBufWrittenBytes)),
+		uintptr(unsafe.Pointer(overlapped)),
+	)
+	ok = ret != 0
+	return
+}
+
+func FindFirstStream(filename string, data *WIN32_FIND_STREAM_DATA) (HANDLE, bool) {
+	ret, _, _ := findFirstStream.Call(
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(filename))),
+		FindStreamInfoStandard,
+		uintptr(unsafe.Pointer(data)),
+		0,
+	)
+	h := HANDLE(ret)
+	return h, h != INVALID_HANDLE_VALUE
+}
+
+func FindNextStream(finder HANDLE, data *WIN32_FIND_STREAM_DATA) bool {
+	ret, _, _ := findNextStream.Call(
+		uintptr(finder),
+		uintptr(unsafe.Pointer(data)),
+	)
+	return ret != 0
+}
+
+func FindClose(finder HANDLE) bool {
+	ret, _, _ := findClose.Call(
+		uintptr(finder),
+	)
+	return ret != 0
 }
 
 func CoInitializeEx(coInit uintptr) HRESULT {
@@ -3313,4 +4127,109 @@ func PlaySound(sound string, mod HMODULE, flags uint32) bool {
 		uintptr(flags),
 	)
 	return ret != 0
+}
+
+func GetMonitorBrightness(monitor HANDLE) (ok bool, min, cur, max DWORD) {
+	ret, _, _ := getMonitorBrightness.Call(
+		uintptr(monitor),
+		uintptr(unsafe.Pointer(&min)),
+		uintptr(unsafe.Pointer(&cur)),
+		uintptr(unsafe.Pointer(&max)),
+	)
+	ok = ret != 0
+	return
+}
+
+func SetMonitorBrightness(monitor HANDLE, value DWORD) bool {
+	ret, _, _ := setMonitorBrightness.Call(
+		uintptr(monitor),
+		uintptr(value),
+	)
+	return ret != 0
+}
+
+func GetNumberOfPhysicalMonitorsFromHMONITOR(monitor HMONITOR) (bool, DWORD) {
+	var n DWORD
+	ret, _, _ := getNumberOfPhysicalMonitorsFromHMONITOR.Call(
+		uintptr(monitor),
+		uintptr(unsafe.Pointer(&n)),
+	)
+	return ret != 0, n
+}
+
+// len(buf) must not be 0.
+func GetPhysicalMonitorsFromHMONITOR(monitor HMONITOR, buf []PHYSICAL_MONITOR) bool {
+	ret, _, _ := getPhysicalMonitorsFromHMONITOR.Call(
+		uintptr(monitor),
+		uintptr(len(buf)),
+		uintptr(unsafe.Pointer(&buf[0])),
+	)
+	return ret != 0
+}
+
+func MAKEWPARAM(low, high uint16) uintptr {
+	return uintptr(low) | uintptr(high)<<16
+}
+
+func MAKELPARAM(low, high uint16) uintptr {
+	return MAKEWPARAM(low, high)
+}
+
+func AlphaBlend(
+	dest HDC, destX, destY, destW, destH int,
+	src HDC, srcX, srcY, srcW, srcH int,
+	f BLENDFUNC,
+) bool {
+	ret, _, _ := alphaBlend.Call(
+		uintptr(dest),
+		uintptr(destX),
+		uintptr(destY),
+		uintptr(destW),
+		uintptr(destH),
+		uintptr(src),
+		uintptr(srcX),
+		uintptr(srcY),
+		uintptr(srcW),
+		uintptr(srcH),
+		uintptr(*((*uintptr)(unsafe.Pointer(&f)))),
+	)
+	return ret != 0
+}
+
+func WNetAddConnection2(rsc *NETRESOURCE, pass, user string, flags uint32) uint32 {
+	var resource *netresource
+	if rsc != nil {
+		resource = rsc.toInternal()
+	}
+	ret, _, _ := wNetAddConnection2.Call(
+		uintptr(unsafe.Pointer(resource)),
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(pass))),
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(user))),
+		uintptr(flags),
+	)
+	return uint32(ret)
+}
+
+func WNetAddConnection3(owner HWND, rsc *NETRESOURCE, pass, user string, flags uint32) uint32 {
+	var resource *netresource
+	if rsc != nil {
+		resource = rsc.toInternal()
+	}
+	ret, _, _ := wNetAddConnection3.Call(
+		uintptr(owner),
+		uintptr(unsafe.Pointer(resource)),
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(pass))),
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(user))),
+		uintptr(flags),
+	)
+	return uint32(ret)
+}
+
+func WNetCancelConnection2(name string, flags uint32, force bool) uint32 {
+	ret, _, _ := wNetCancelConnection2.Call(
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(name))),
+		uintptr(flags),
+		uintptr(BoolToBOOL(force)),
+	)
+	return uint32(ret)
 }

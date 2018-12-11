@@ -2,6 +2,7 @@ package stellar
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/keybase/client/go/badges"
@@ -39,6 +40,9 @@ type Stellar struct {
 	hasWalletCache     map[keybase1.UserVersion]bool
 
 	federationClient federation.ClientInterface
+
+	bidLock sync.Mutex
+	bids    []buildPaymentEntry
 
 	bpcLock sync.Mutex
 	bpc     BuildPaymentCache
@@ -79,6 +83,7 @@ func (s *Stellar) OnLogout() {
 	s.shutdownAutoClaimRunner()
 	s.deleteBpc()
 	s.deleteDisclaimer()
+	s.clearBids()
 }
 
 func (s *Stellar) shutdownAutoClaimRunner() {
@@ -101,6 +106,12 @@ func (s *Stellar) deleteDisclaimer() {
 	s.disclaimerLock.Lock()
 	defer s.disclaimerLock.Unlock()
 	s.disclaimerAccepted = nil
+}
+
+func (s *Stellar) clearBids() {
+	s.bidLock.Lock()
+	defer s.bidLock.Unlock()
+	s.bids = nil
 }
 
 func (s *Stellar) GetMigrationLock() *sync.Mutex {
@@ -193,6 +204,13 @@ func (s *Stellar) SendMiniChatPayments(mctx libkb.MetaContext, payments []libkb.
 	return SendMiniChatPayments(mctx, s.walletState, payments)
 }
 
+// SpecMiniChatPayments creates a summary of the amounts that a list of MiniChatPayments will
+// result in.
+func (s *Stellar) SpecMiniChatPayments(mctx libkb.MetaContext, payments []libkb.MiniChatPayment) (*libkb.MiniChatPaymentSummary, error) {
+	return SpecMiniChatPayments(mctx, s.walletState, payments)
+}
+
+// RefreshWalletState refreshes the WalletState.
 func (s *Stellar) RefreshWalletState(ctx context.Context) {
 	if err := s.walletState.RefreshAll(ctx); err != nil {
 		s.G().Log.CDebugf(ctx, "stellar global RefreshWalletState error: %s", err)
@@ -274,6 +292,81 @@ func (s *Stellar) informAcceptedDisclaimerLocked(ctx context.Context) (err error
 		Version:  1,
 		Accepted: true,
 	})
+}
+
+func (s *Stellar) startBuildPayment(mctx libkb.MetaContext) (bid stellar1.BuildPaymentID, err error) {
+	defer func() {
+		x := bid.String()
+		if err != nil {
+			x = fmt.Sprintf("ERR(%v)", err.Error())
+		}
+		mctx.CDebugf("Stellar.startBuildPayment -> %v", x)
+	}()
+	bid, err = RandomBuildPaymentID()
+	if err != nil {
+		return "", err
+	}
+	s.bidLock.Lock()
+	defer s.bidLock.Unlock()
+	s.bids = append(s.bids, buildPaymentEntry{
+		Bid:         bid,
+		ReadyToSend: false,
+	})
+	if len(s.bids) > 20 {
+		// Too many open payment builds. Drop the oldest ones.
+		s.bids = s.bids[len(s.bids)-20:]
+	}
+	return bid, nil
+}
+
+// updateBuildPayment updates the state of an in-progress payment.
+// If frozen values are provided the payment is assumed to be ready to send.
+// No-op if the bid does not exist.
+func (s *Stellar) updateBuildPayment(mctx libkb.MetaContext, bid stellar1.BuildPaymentID, frozen *frozenPayment) {
+	mctx.CDebugf("Stellar.updateBuildPayment(%v)", bid)
+	s.bidLock.Lock()
+	defer s.bidLock.Unlock()
+	var bids []buildPaymentEntry
+	for _, entry := range s.bids {
+		if entry.Stopped {
+			mctx.CDebugf("blocking attempt to update stopped payment %v", bid)
+		}
+		if entry.Bid.Eq(bid) && !entry.Stopped {
+			bids = append(bids, buildPaymentEntry{
+				Bid:         bid,
+				ReadyToSend: frozen != nil,
+				frozen:      frozen,
+			})
+		} else {
+			bids = append(bids, entry)
+		}
+	}
+	s.bids = bids
+}
+
+// stopBuildPayment removes a bid.
+// Returns the previous value of the entry.
+func (s *Stellar) stopBuildPayment(mctx libkb.MetaContext, bid stellar1.BuildPaymentID) (res *buildPaymentEntry) {
+	mctx.CDebugf("Stellar.stopBuildPayment(%v)", bid)
+	s.buildPaymentSlot.Stop()
+	s.bidLock.Lock()
+	defer s.bidLock.Unlock()
+	// Remove bid from s.bids.
+	var bids []buildPaymentEntry
+	for _, entry := range s.bids {
+		if entry.Bid.Eq(bid) {
+			entry := entry
+			res = &entry
+			bids = append(bids, buildPaymentEntry{
+				Bid:     bid,
+				Stopped: true,
+			})
+		} else {
+			bids = append(bids, entry)
+		}
+	}
+	s.bids = bids
+	return res
 }
 
 // getFederationClient is a helper function used during

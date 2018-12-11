@@ -42,10 +42,13 @@ be selected by specifying target type with the architecture name. E.g.
 -target=android/arm,android/386.
 
 For -target ios, gomobile must be run on an OS X machine with Xcode
-installed. Support is not complete.
+installed.
 
 If the package directory contains an assets subdirectory, its contents
 are copied into the output.
+
+Flag -iosversion sets the minimal version of the iOS SDK to compile against.
+The default version is 6.1.
 
 The -bundleid flag is for -target ios only and sets the bundle ID to use
 with the app; defaults to "org.golang.todo".
@@ -218,17 +221,18 @@ func printcmd(format string, args ...interface{}) {
 
 // "Build flags", used by multiple commands.
 var (
-	buildA        bool   // -a
-	buildI        bool   // -i
-	buildN        bool   // -n
-	buildV        bool   // -v
-	buildX        bool   // -x
-	buildO        string // -o
-	buildGcflags  string // -gcflags
-	buildLdflags  string // -ldflags
-	buildTarget   string // -target
-	buildWork     bool   // -work
-	buildBundleID string // -bundleid
+	buildA          bool   // -a
+	buildI          bool   // -i
+	buildN          bool   // -n
+	buildV          bool   // -v
+	buildX          bool   // -x
+	buildO          string // -o
+	buildGcflags    string // -gcflags
+	buildLdflags    string // -ldflags
+	buildTarget     string // -target
+	buildWork       bool   // -work
+	buildBundleID   string // -bundleid
+	buildIOSVersion string // -iosversion
 )
 
 func addBuildFlags(cmd *command) {
@@ -237,6 +241,7 @@ func addBuildFlags(cmd *command) {
 	cmd.flag.StringVar(&buildLdflags, "ldflags", "", "")
 	cmd.flag.StringVar(&buildTarget, "target", "android", "")
 	cmd.flag.StringVar(&buildBundleID, "bundleid", "org.golang.todo", "")
+	cmd.flag.StringVar(&buildIOSVersion, "iosversion", "6.1", "")
 
 	cmd.flag.BoolVar(&buildA, "a", false, "")
 	cmd.flag.BoolVar(&buildI, "i", false, "")

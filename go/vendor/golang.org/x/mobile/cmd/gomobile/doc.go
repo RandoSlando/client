@@ -24,7 +24,7 @@ Commands:
 	bind        build a library for Android and iOS
 	build       compile android APK and iOS app
 	clean       remove object files and cached gomobile files
-	init        build OpenAL for Android
+	init        install NDK toolchains and build OpenAL for Android
 	install     compile android APK and install on device
 	version     print version
 
@@ -98,7 +98,7 @@ be selected by specifying target type with the architecture name. E.g.
 -target=android/arm,android/386.
 
 For -target ios, gomobile must be run on an OS X machine with Xcode
-installed. Support is not complete.
+installed.
 
 If the package directory contains an assets subdirectory, its contents
 are copied into the output.
@@ -124,11 +124,15 @@ Usage:
 Clean removes object files and cached NDK files downloaded by gomobile init
 
 
-Build OpenAL for Android
+Install NDK toolchains and build OpenAL for Android
 
 Usage:
 
-	gomobile init -openal dir
+	gomobile init [-ndk dir] [-openal dir]
+
+If the -ndk flag is specified or the Android NDK is installed at
+$ANDROID_HOME/ndk-bundle, init will create NDK standalone toolchains
+for Android targets.
 
 If a OpenAL source directory is specified with -openal, init will
 build an Android version of OpenAL for use with gomobile build

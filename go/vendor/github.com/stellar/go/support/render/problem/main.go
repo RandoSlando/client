@@ -1,12 +1,13 @@
 package problem
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
-	"github.com/go-errors/errors"
-	"golang.org/x/net/context"
+	"github.com/stellar/go/support/errors"
+	"github.com/stellar/go/support/log"
 )
 
 // P is a struct that represents an error response to be rendered to a connected
@@ -84,6 +85,8 @@ func render(ctx context.Context, w http.ResponseWriter, p P) {
 	js, err := json.MarshalIndent(p, "", "  ")
 
 	if err != nil {
+		err := errors.Wrap(err, "failed to encode problem")
+		log.Ctx(ctx).WithStack(err).Error(err)
 		http.Error(w, "error rendering problem", http.StatusInternalServerError)
 		return
 	}
@@ -93,17 +96,14 @@ func render(ctx context.Context, w http.ResponseWriter, p P) {
 }
 
 func renderErr(ctx context.Context, w http.ResponseWriter, err error) {
-	origErr := err
-
-	if err, ok := err.(*errors.Error); ok {
-		origErr = err.Err
-	}
+	origErr := errors.Cause(err)
 
 	p, ok := errToProblemMap[origErr]
 
 	// If this error is not a registered error
 	// log it and replace it with a 500 error
 	if !ok {
+		log.Ctx(ctx).WithStack(err).Error(err)
 		p = ServerError
 	}
 

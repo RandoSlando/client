@@ -98,30 +98,30 @@ const getPeopleData = (
           const iFollow = following.has(suggestion.username)
           return list.push(
             Constants.makeFollowSuggestion({
-              username: suggestion.username,
               followsMe,
-              iFollow,
               fullName: suggestion.fullName,
+              iFollow,
+              username: suggestion.username,
             })
           )
         }, I.List())) ||
       I.List()
 
     return PeopleGen.createPeopleDataProcessed({
-      oldItems,
-      newItems,
-      lastViewed: new Date(data.lastViewed),
       followSuggestions,
+      lastViewed: new Date(data.lastViewed),
+      newItems,
+      oldItems,
       version: data.version,
     })
   })
 }
 
-const _markViewed = (action: PeopleGen.MarkViewedPayload) => Saga.call(RPCTypes.homeHomeMarkViewedRpcPromise)
+const _markViewed = (action: PeopleGen.MarkViewedPayload) => Saga.callUntyped(RPCTypes.homeHomeMarkViewedRpcPromise)
 
 const _skipTodo = (action: PeopleGen.SkipTodoPayload) => {
   return Saga.sequentially([
-    Saga.call(RPCTypes.homeHomeSkipTodoTypeRpcPromise, {
+    Saga.callUntyped(RPCTypes.homeHomeSkipTodoTypeRpcPromise, {
       t: RPCTypes.homeHomeScreenTodoType[action.payload.type],
     }),
     // TODO get rid of this load and have core send us a homeUIRefresh

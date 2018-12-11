@@ -7,7 +7,7 @@ import * as Chat2Gen from '../../../actions/chat2-gen'
 import * as RouteTreeGen from '../../../actions/route-tree-gen'
 import * as Inbox from '..'
 import {namedConnect} from '../../../util/container'
-import type {Props as _Props, RowItemSmall, RowItemBig} from '../index.types'
+import type {Props as _Props, RowItem, RowItemSmall, RowItemBig} from '../index.types'
 import normalRowData from './normal'
 import filteredRowData from './filtered'
 import ff from '../../../util/feature-flags'
@@ -32,14 +32,6 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = (dispatch, {navigateAppend}) => ({
   _onSelect: (conversationIDKey: Types.ConversationIDKey) =>
     dispatch(Chat2Gen.createSelectConversation({conversationIDKey, reason: 'inboxFilterChanged'})),
-  onNewChat: () =>
-    dispatch(
-      ff.newTeamBuildingForChat
-        ? RouteTreeGen.createNavigateAppend({
-            path: [{selected: 'newChat', props: {}}],
-          })
-        : Chat2Gen.createSetPendingMode({pendingMode: 'searchingForUsers'})
-    ),
   _onSelectNext: (rows, selectedConversationIDKey, direction) => {
     const goodRows: Array<RowItemSmall | RowItemBig> = rows.reduce((arr, row) => {
       if (row.type === 'small' || row.type === 'big') {
@@ -54,6 +46,14 @@ const mapDispatchToProps = (dispatch, {navigateAppend}) => ({
     }
   },
   _refreshInbox: () => dispatch(Chat2Gen.createInboxRefresh({reason: 'componentNeverLoaded'})),
+  onNewChat: () =>
+    dispatch(
+      ff.newTeamBuildingForChat
+        ? RouteTreeGen.createNavigateAppend({
+            path: [{props: {}, selected: 'newChat'}],
+          })
+        : Chat2Gen.createSetPendingMode({pendingMode: 'searchingForUsers'})
+    ),
   onUntrustedInboxVisible: (conversationIDKeys: Array<Types.ConversationIDKey>) =>
     dispatch(
       Chat2Gen.createMetaNeedsUpdating({
@@ -117,12 +117,16 @@ class InboxWrapper extends React.PureComponent<Props, State> {
     }
   }
 
+  _isExpanded(rows: Array<RowItem>) {
+    return rows.length > 5 && rows[5].type === 'small'
+  }
+
   componentDidUpdate(prevProps) {
     const loadedForTheFirstTime = prevProps.rows.length === 0 && this.props.rows.length > 0
     // See if the first 6 are small, this implies it's expanded
-    const smallRowsPlusOne = prevProps.rows.slice(0, 6).filter(r => r.type === 'small')
-    const expandedForTheFirstTime = smallRowsPlusOne.length === 5 && this.props.rows.length > 5
-    if (loadedForTheFirstTime || expandedForTheFirstTime) {
+    const wasExpanded = this._isExpanded(prevProps.rows)
+    const isExpanded = this._isExpanded(this.props.rows)
+    if (loadedForTheFirstTime || (isExpanded && !wasExpanded)) {
       const toUnbox = this.props.rows.slice(0, 20).reduce((arr, row) => {
         if (row.type === 'small' || row.type === 'big') {
           arr.push(row.conversationIDKey)

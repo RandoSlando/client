@@ -363,7 +363,7 @@
     // Tell server we're typing
     "sendTyping": {
       "conversationIDKey": "Types.ConversationIDKey",
-      "typing": "boolean"
+      "text": "HiddenString"
     },
     // On startup we're automatically loading a thread sometimes. When we first view it we should
     // go through our marking as read logic
@@ -455,10 +455,6 @@
     "staticConfigLoaded": {
       "_description": "Static configuration info was loaded from the service.",
       "staticConfig": "Types.StaticConfig"
-    },
-    "filePickerError": {
-      "_description": "Sent whenever the mobile file picker encounters an error.",
-      "error": "Error"
     },
     "setMinWriterRole": {
       "_description": "Set the minimum role required to write into a conversation. Valid only for team conversations.",
