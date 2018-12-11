@@ -126,7 +126,7 @@ helpers.rootLinuxNode(env, {
                             sh "git add -A"
                             // Generate protocols
                             dir ('protocol') {
-                                sh "npm i"
+                                sh "yarn --pure-lockfile"
                                 sh "make clean"
                                 sh "make"
                             }
