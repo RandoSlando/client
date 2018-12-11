@@ -3,6 +3,18 @@
 	"ignore": "test solaris",
 	"package": [
 		{
+			"path": "appengine",
+			"revision": ""
+		},
+		{
+			"path": "appengine_internal",
+			"revision": ""
+		},
+		{
+			"path": "appengine_internal/base",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "SYupvmlf7Gq3GEyIqp6Ll5j3xuM=",
 			"path": "bazil.org/fuse",
 			"revision": "08e592e472ded97404acd4e03e9a9e46dfd57fab",
@@ -537,10 +549,10 @@
 			"revisionTime": "2016-06-28T16:50:19-07:00"
 		},
 		{
-			"checksumSHA1": "qOau8H3xN9/gTNYeFpzn6EUeYFU=",
+			"checksumSHA1": "ffC5qvAmfgvFbIYgKbE2E7fwQg8=",
 			"path": "github.com/keybase/go-updater/watchdog",
-			"revision": "2acca6d00b278821df4a39569955d8b42c77b6cc",
-			"revisionTime": "2018-01-18T23:10:18Z"
+			"revision": "9ec7c27d6efb50003ef9951379ef6878db73bbc5",
+			"revisionTime": "2018-10-22T15:34:00Z"
 		},
 		{
 			"checksumSHA1": "6siKrD8lFPCe0S3OF9E4wuRgUAo=",
