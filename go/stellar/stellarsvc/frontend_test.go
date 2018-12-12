@@ -1836,6 +1836,8 @@ func reviewPaymentExpectContractFailure(t testing.TB, tc *TestContext, arg stell
 	check(t)
 }
 
+// xxx todo add a test for a review not working and then working.
+
 // Cases where Send is blocked because the build gamut wasn't run.
 func TestBuildPaymentLocalBidBlocked(t *testing.T) {
 	// xxx update this test to purposefully use or not use review
