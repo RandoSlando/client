@@ -492,6 +492,10 @@
         {
           "type": "int",
           "name": "unreadPayments"
+        },
+        {
+          "type": "string",
+          "name": "displayCurrency"
         }
       ]
     },

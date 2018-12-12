@@ -14,6 +14,7 @@ type WalletAccountLocal struct {
 	Name               string    `codec:"name" json:"name"`
 	BalanceDescription string    `codec:"balanceDescription" json:"balanceDescription"`
 	Seqno              string    `codec:"seqno" json:"seqno"`
+	DisplayCurrency    string    `codec:"displayCurrency" json:"displayCurrency"`
 }
 
 func (o WalletAccountLocal) DeepCopy() WalletAccountLocal {
@@ -23,6 +24,7 @@ func (o WalletAccountLocal) DeepCopy() WalletAccountLocal {
 		Name:               o.Name,
 		BalanceDescription: o.BalanceDescription,
 		Seqno:              o.Seqno,
+		DisplayCurrency:    o.DisplayCurrency,
 	}
 }
 
