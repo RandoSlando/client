@@ -711,6 +711,12 @@
 			"revisionTime": "2016-12-20T22:57:08-05:00"
 		},
 		{
+			"checksumSHA1": "KAzbLjI9MzW2tjfcAsK75lVRp6I=",
+			"path": "github.com/rcrowley/go-metrics",
+			"revision": "1f30fe9094a513ce4c700b9a54458bbb0c96996c",
+			"revisionTime": "2016-11-28T21:05:44Z"
+		},
+		{
 			"checksumSHA1": "jFB5vxLu4zA5qTKxAGTBnxyTMKA=",
 			"path": "github.com/rwcarlsen/goexif/exif",
 			"revision": "709fab3d192d7c62f86043caff1e7e3fb0f42bd8",
@@ -1295,6 +1301,12 @@
 			"path": "golang.org/x/text/unicode/cldr",
 			"revision": "a7c023693a94aedd6b6df43ae7526bfe9d2b7d22",
 			"revisionTime": "2016-09-22T05:42:04Z"
+		},
+		{
+			"checksumSHA1": "OwypTTxsp/HEwbfXq9yMR4fACRM=",
+			"path": "golang.org/x/text/unicode/norm",
+			"revision": "f773ec03ce334298742df7f3108fc0d402646d22",
+			"revisionTime": "2016-05-05T22:32:54Z"
 		},
 		{
 			"checksumSHA1": "nc9bMBFgXJhqeXDieUU7ZCjK8rk=",
